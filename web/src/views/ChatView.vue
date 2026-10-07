@@ -85,6 +85,12 @@ onBeforeUnmount(() => modelStore.stopPolling())
   border-right: 1px solid #e4e7ed;
   background: #fafafa;
 }
+/* 小屏（手机）隐藏预留侧栏；M3 会话列表落地后再做抽屉化（M4） */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
 .main {
   display: flex;
   flex-direction: column;
