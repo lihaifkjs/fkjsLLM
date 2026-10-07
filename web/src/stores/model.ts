@@ -1,6 +1,6 @@
 // 模型状态机镜像：unloaded|loading|loaded|unloading|error（技术方案 §3.4）
 // 5s 轮询 status + 开关操作后立刻刷新（技术方案 §5.4）
-import { defineStore } from 'pinia'
+import { acceptHMRUpdate, defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api, type ModelStatus } from '../api'
 
@@ -60,3 +60,8 @@ export const useModelStore = defineStore('model', () => {
 
   return { status, state, busy, loaded, refresh, startPolling, stopPolling, load, unload }
 })
+
+// 让 Pinia store 支持热更新，避免 dev 下新旧代码混跑（生产无影响）
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useModelStore, import.meta.hot))
+}

@@ -1,5 +1,5 @@
 // 推理参数：默认值对齐技术方案 §3.3（Qwen3 官方推荐）；面板 UI 留 M3
-import { defineStore } from 'pinia'
+import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api, type InferenceParams } from '../api'
 
@@ -26,3 +26,8 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return { params, load, save }
 })
+
+// 让 Pinia store 支持热更新，避免 dev 下新旧代码混跑（生产无影响）
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useSettingsStore, import.meta.hot))
+}
