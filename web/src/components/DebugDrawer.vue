@@ -5,6 +5,8 @@ import { computed, ref, watch, type Component } from 'vue'
 import type { ChatMessage } from '../api'
 import PlaceholderPane from './debug/PlaceholderPane.vue'
 import RawPane from './debug/RawPane.vue'
+import TokensPane from './debug/TokensPane.vue'
+import PerfPane from './debug/PerfPane.vue'
 
 interface DebugTab {
   key: string
@@ -12,14 +14,15 @@ interface DebugTab {
   component: Component
 }
 
-// 二期候选标签页（PRD 3.7），一期统一渲染占位组件
-// 「原始输出」为协议外新增：展示消息原文（含 <think> 标签），与主界面折叠渲染对照
+// 二期候选标签页（PRD 3.7），未落地的统一渲染占位组件
+// 「原始输出」为协议外新增：展示该消息的 SSE 帧序列
+// 「Token 统计」「性能指标」已落地：数据取自帧记录（done.usage 与帧时间戳）
 const TABS: DebugTab[] = [
   { key: 'raw', label: '原始输出', component: RawPane },
   { key: 'prompt', label: 'Prompt 预览', component: PlaceholderPane },
-  { key: 'tokens', label: 'Token 统计', component: PlaceholderPane },
+  { key: 'tokens', label: 'Token 统计', component: TokensPane },
   { key: 'trace', label: '调用链', component: PlaceholderPane },
-  { key: 'perf', label: '性能指标', component: PlaceholderPane },
+  { key: 'perf', label: '性能指标', component: PerfPane },
   { key: 'params', label: '生效参数快照', component: PlaceholderPane },
 ]
 
