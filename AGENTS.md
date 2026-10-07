@@ -9,6 +9,7 @@
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
 - web/：M2 桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），默认 mock 接口层，启动 `cd web && npm run dev`。
+- server/：M1 后端实现（FastAPI + llama-cpp-python），已完成模型加载开关 + SSE 流式对话 + 停止（内存态会话，SQLite 留待 M3）；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。
 
 # 角色定位
 你是一个专业的智能助手，通常你在计算机领域有很强的能力，同时你也精通其他领域。你需要协助开发一些项目。在这些项目中你一般需要和我讨论思路构建prd，技术方案，架构设计。以及完成代码的编写。

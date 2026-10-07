@@ -1,0 +1,9 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+llama-cpp-python>=0.3
+
+# llama-cpp-python 安装说明：
+# CPU 预编译 wheel（当前）：
+#   pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+# CUDA 版（需 CUDA Toolkit + MSVC Build Tools + cmake，编译后 config 的 n_gpu_layers 改 -1）：
+#   set CMAKE_ARGS=-DGGML_CUDA=on && pip install llama-cpp-python --force-reinstall --no-cache-dir

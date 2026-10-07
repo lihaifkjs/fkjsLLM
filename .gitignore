@@ -1,2 +1,6 @@
 # 模型文件（9GB，不入库，下载方式见 模型下载.md）
 *.gguf
+
+# Python
+__pycache__/
+*.pyc
