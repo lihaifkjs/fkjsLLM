@@ -34,11 +34,20 @@ export interface ApiError {
 
 export type ChatSseEvent = 'meta' | 'token' | 'done' | 'error'
 
+// 一帧原始 SSE 记录：time 为到达时刻（秒），data 为「data: 」后的原始字符串（不重新序列化，保真）
+export interface SseFrame {
+  time: number
+  event: string
+  data: string
+}
+
 export interface ChatStreamCallbacks {
   onMeta: (meta: ChatMeta) => void
   onToken: (token: ChatToken) => void
   onDone: (done: ChatDone) => void
   onError: (error: ApiError) => void
+  // 可选：每一帧的原始记录，用于调试抽屉「原始输出」
+  onFrame?: (frame: SseFrame) => void
 }
 
 // 聊天流的本地句柄：abort() 只终止本地读取，服务端中断走 stopChat

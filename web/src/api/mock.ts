@@ -129,25 +129,28 @@ function chat(req: ChatRequest, cb: ChatStreamCallbacks): ChatStreamHandle {
       return
     }
     if (index === 0) {
-      cb.onMeta({
+      const meta = {
         session_id: session.id,
         user_message_id: userMessage.id,
         assistant_message_id: assistantMessage.id,
         title: session.title,
-      })
+      }
+      cb.onFrame?.({ time: Date.now() / 1000, event: 'meta', data: JSON.stringify(meta) })
+      cb.onMeta(meta)
     }
     if (index < tokens.length) {
       const text = tokens[index]!
       assistantMessage.content += text
+      cb.onFrame?.({ time: Date.now() / 1000, event: 'token', data: JSON.stringify({ text }) })
       cb.onToken({ text })
       index++
     }
     if (index >= tokens.length) {
       clearInterval(timer)
       generating = false
-      cb.onDone({
-        usage: { input_tokens: Math.ceil(req.content.length / 2), output_tokens: tokens.length },
-      })
+      const done = { usage: { input_tokens: Math.ceil(req.content.length / 2), output_tokens: tokens.length } }
+      cb.onFrame?.({ time: Date.now() / 1000, event: 'done', data: JSON.stringify(done) })
+      cb.onDone(done)
     }
   }, TOKEN_INTERVAL_MS)
 

@@ -75,6 +75,7 @@ function chat(req: ChatRequest, cb: ChatStreamCallbacks): ChatStreamHandle {
         const { frames, rest } = parseSseFrames(buffer)
         buffer = rest
         for (const frame of frames) {
+          cb.onFrame?.({ time: Date.now() / 1000, event: frame.event, data: frame.data })
           const data = JSON.parse(frame.data)
           switch (frame.event as ChatSseEvent) {
             case 'meta':
