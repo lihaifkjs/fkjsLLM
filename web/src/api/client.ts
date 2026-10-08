@@ -18,8 +18,19 @@ const BASE = '/api'
 
 async function parseErrorBody(res: Response): Promise<ApiError> {
   try {
-    const body = (await res.json()) as Partial<ApiError>
-    return { code: body.code ?? `http_${res.status}`, message: body.message ?? res.statusText }
+    // FastAPI 的 HTTPException 会把 {code,message} 包进 detail 字段（400 类错误），
+    // ServiceError 全局处理器则直接返回顶层 {code,message}（409 类错误），两种都要解
+    const body = (await res.json()) as {
+      code?: string
+      message?: string
+      detail?: { code?: string; message?: string } | string
+    }
+    const payload = typeof body.detail === 'object' && body.detail !== null ? body.detail : body
+    return {
+      code: payload.code ?? `http_${res.status}`,
+      message:
+        payload.message ?? (typeof body.detail === 'string' ? body.detail : res.statusText),
+    }
   } catch {
     return { code: `http_${res.status}`, message: res.statusText }
   }
@@ -109,8 +120,11 @@ export const api: LlmApi = {
   listSessions: () => request<SessionSummary[]>('/sessions'),
   createSession: (title) => request<Session>('/sessions', jsonInit('POST', { title })),
   getSessionMessages: (sessionId) => request<ChatMessage[]>(`/sessions/${sessionId}/messages`),
+  renameSession: (sessionId, title) =>
+    request<Session>(`/sessions/${sessionId}`, jsonInit('PATCH', { title })),
+  deleteSession: (sessionId) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
   getParams: () => request<InferenceParams>('/params'),
-  saveParams: (params) => request<InferenceParams>('/params', jsonInit('PUT', params)),
+  saveParams: (patch) => request<InferenceParams>('/params', jsonInit('PUT', patch)),
   getModelStatus: () => request<ModelStatus>('/model/status'),
   loadModel: () => request<ModelStatus>('/model/load', { method: 'POST' }),
   unloadModel: () => request<ModelStatus>('/model/unload', { method: 'POST' }),

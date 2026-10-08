@@ -107,8 +107,12 @@ export interface LlmApi {
   listSessions: () => Promise<SessionSummary[]>
   createSession: (title?: string) => Promise<Session>
   getSessionMessages: (sessionId: number) => Promise<ChatMessage[]>
+  renameSession: (sessionId: number, title: string) => Promise<Session>
+  deleteSession: (sessionId: number) => Promise<void>
   getParams: () => Promise<InferenceParams>
-  saveParams: (params: InferenceParams) => Promise<InferenceParams>
+  // 部分字段补丁（技术方案 §3.3）：显式字段优先于 preset；preset 仅在精确/平衡/创意三选一
+  // 时传入，勿传 'custom'（后端视为未知预设，400 INVALID_PARAMS）
+  saveParams: (patch: Partial<InferenceParams>) => Promise<InferenceParams>
   getModelStatus: () => Promise<ModelStatus>
   loadModel: () => Promise<ModelStatus>
   unloadModel: () => Promise<ModelStatus>

@@ -1,4 +1,4 @@
-// 解析助手消息中的 <think> 思考块（Qwen3 输出，后端原样透传，见 docs/后端实现.md §4.2）
+// 解析助手消息中的 <think> 思考块（Qwen3 输出，后端原样透传，见 docs/后端m2实现.md §4.2）
 // 流式期间 </think> 可能尚未到达：此时 thinkingDone=false，全部内容视为思考中
 export interface ThinkSplit {
   thinking: string | null // 思考内容；无思考块时为 null

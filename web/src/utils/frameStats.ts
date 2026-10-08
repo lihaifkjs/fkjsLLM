@@ -2,7 +2,7 @@
 import type { SseFrame } from '../api'
 
 export interface FrameStats {
-  inputTokens: number | null // done 帧 usage.input_tokens（近似值，见后端实现.md §4.3）
+  inputTokens: number | null // done 帧 usage.input_tokens（近似值，见后端m2实现.md §4.3）
   outputTokens: number | null
   tokenFrames: number // token 事件帧数
   ttftMs: number | null // 首 token 延迟：meta 帧 → 首个 token 帧
