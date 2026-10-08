@@ -178,6 +178,14 @@ class ModelManager:
                 result.output_tokens += 1
                 yield text
 
+    def count_tokens(self, text: str) -> int:
+        """用当前模型 tokenize 计数——滑窗截断（chat/context.py）调用。"""
+        with self._lock:
+            llm = self._llm
+        if llm is None:
+            raise ServiceError("MODEL_NOT_LOADED", "模型未加载")
+        return len(llm.tokenize(text.encode("utf-8"), add_bos=False))
+
     def stop(self):
         with self._lock:
             event = self._stop_event

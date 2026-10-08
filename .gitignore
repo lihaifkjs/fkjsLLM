@@ -4,3 +4,9 @@
 # Python
 __pycache__/
 *.pyc
+
+# SQLite 数据文件（会话/消息/参数，本地状态不入库）
+server/data/
+
+# macOS
+.DS_Store

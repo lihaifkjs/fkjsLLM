@@ -27,6 +27,8 @@ class Config:
     host: str = "0.0.0.0"
     port: int = 8000
     auth_enabled: bool = False  # PRD 3.6 占位，一期不实现
+    db_path: str = os.getenv(
+        "DB_PATH", str(PROJECT_ROOT / "server" / "data" / "app.db"))
     sampling: SamplingParams = field(default_factory=SamplingParams)
 
 

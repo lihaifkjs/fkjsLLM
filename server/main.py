@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 
 from api import chat as chat_api
 from api import model as model_api
+from api import params as params_api
+from api import sessions as sessions_api
 from model_manager.manager import ServiceError
 
 app = FastAPI(title="fkjsLLM", docs_url="/api/docs")
@@ -24,6 +26,8 @@ async def service_error_handler(_: Request, exc: ServiceError):
 
 app.include_router(chat_api.router)
 app.include_router(model_api.router)
+app.include_router(sessions_api.router)
+app.include_router(params_api.router)
 
 # 生产：托管前端 build 产物（web 下 npm run build）；不存在则跳过（纯后端开发）
 _dist = Path(__file__).resolve().parent.parent / "web" / "dist"

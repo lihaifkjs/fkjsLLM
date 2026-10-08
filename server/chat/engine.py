@@ -1,15 +1,18 @@
-"""对话编排：上下文拼接、内存态会话（M1）、停止转发。
+"""对话编排：上下文拼接、停止转发。
 
-不知道 HTTP，也不直接碰模型实例——只经 model_manager 推理。
-SQLite 持久化在 M3 以 session_store 模块替换内存实现。
+不知道 HTTP，也不直接碰模型实例——只经 model_manager 推理；
+会话/消息持久化委托 session_store，自身只保留运行态（当前生成会话）。
 """
 import threading
-import time
 from dataclasses import dataclass
 from typing import Iterator
 
-from config import config
+from chat.context import fit_window
+from config import SamplingParams, config
 from model_manager.manager import GenerateResult, ServiceError, model_manager
+from params.presets import get_params
+from session_store.base import Message
+from session_store.sqlite_store import session_store
 
 DEFAULT_TITLE = "新会话"
 TITLE_LEN = 20  # 一期标题取首条消息前 20 字（PRD 3.2 简化）
@@ -23,40 +26,10 @@ class ChatMeta:
     title: str
 
 
-class _Session:
-    def __init__(self, session_id: int):
-        self.id = session_id
-        self.title = DEFAULT_TITLE
-        self.messages: list[dict] = []  # [{"id","role","content","created_at"}]
-        self.updated_at = time.time()
-
-
 class ChatEngine:
     def __init__(self):
         self._lock = threading.Lock()
-        self._sessions: dict[int, _Session] = {}
-        self._next_session_id = 1
-        self._next_message_id = 1
         self._active_session_id: int | None = None  # 全局单路生成
-
-    # ---------- 会话（M1 内存实现，接口形状对齐未来 session_store） ----------
-
-    def list_sessions(self) -> list[dict]:
-        with self._lock:
-            sessions = sorted(self._sessions.values(),
-                              key=lambda s: s.updated_at, reverse=True)
-            return [{"id": s.id, "title": s.title, "updated_at": s.updated_at}
-                    for s in sessions]
-
-    def get_messages(self, session_id: int) -> list[dict]:
-        return list(self._get_session(session_id).messages)
-
-    def _get_session(self, session_id: int) -> _Session:
-        with self._lock:
-            session = self._sessions.get(session_id)
-        if session is None:
-            raise ServiceError("SESSION_NOT_FOUND", f"会话 {session_id} 不存在")
-        return session
 
     # ---------- 对话 ----------
 
@@ -68,50 +41,60 @@ class ChatEngine:
         """
         with self._lock:
             if session_id is None:
-                session = _Session(self._next_session_id)
-                self._sessions[session.id] = session
-                self._next_session_id += 1
+                title = content[:TITLE_LEN].strip() or DEFAULT_TITLE
+                session = session_store.create_session(title)
             else:
-                session = self._sessions.get(session_id)
-                if session is None:
-                    raise ServiceError(
-                        "SESSION_NOT_FOUND", f"会话 {session_id} 不存在")
+                session = session_store.get_session(session_id)
+                if session.title == DEFAULT_TITLE:
+                    # 空会话（POST /api/sessions 建的）首条消息生成标题
+                    title = content[:TITLE_LEN].strip() or DEFAULT_TITLE
+                    session = session_store.rename_session(session.id, title)
 
-            user_msg = self._append(session, "user", content)
-            if session.title == DEFAULT_TITLE:
-                session.title = content[:TITLE_LEN] or DEFAULT_TITLE
-            assistant_msg = self._append(session, "assistant", "")
+            user_msg = session_store.add_message(session.id, "user", content)
+            # 占位 assistant 消息：先插入拿到 id（meta 要用），生成完回填内容
+            assistant_msg = session_store.add_message(
+                session.id, "assistant", "")
             self._active_session_id = session.id
 
-            # 拼上下文：system prompt（若配置）→ 历史 → 当前输入
-            prompt = []
-            if config.sampling.system_prompt:
-                prompt.append({"role": "system",
-                               "content": config.sampling.system_prompt})
-            prompt.extend({"role": m["role"], "content": m["content"]}
-                          for m in session.messages[:-1])  # 去掉占位 assistant
-
+            prompt, params = self._build_prompt(session.id,
+                                                assistant_msg.id)
             meta = ChatMeta(session_id=session.id,
-                            user_message_id=user_msg["id"],
-                            assistant_message_id=assistant_msg["id"],
+                            user_message_id=user_msg.id,
+                            assistant_message_id=assistant_msg.id,
                             title=session.title)
 
         result = GenerateResult()
-        tokens = model_manager.generate(
-            prompt, config.sampling, result)
-        return meta, self._wrap(session, assistant_msg, tokens, result), result
+        tokens = model_manager.generate(prompt, params, result)
+        return meta, self._wrap(assistant_msg, tokens, result), result
 
-    def _wrap(self, session: _Session, assistant_msg: dict,
-              tokens: Iterator[str], result: GenerateResult) -> Iterator[str]:
+    def _build_prompt(self, session_id: int,
+                      exclude_message_id: int) -> tuple[list[dict], SamplingParams]:
+        """拼上下文并滑窗截断；同时返回本次生效的推理参数。
+
+        参数每次生成前从 params 模块读取——改参数立即生效，不重载模型。
+        """
+        history = [{"role": m.role, "content": m.content}
+                   for m in session_store.get_messages(session_id)
+                   if m.id != exclude_message_id]
+        params = get_params()
+        prompt = fit_window(params.system_prompt, history,
+                            budget=config.n_ctx - params.max_tokens,
+                            count_tokens=model_manager.count_tokens)
+        return prompt, params
+
+    def _wrap(self, assistant_msg: Message, tokens: Iterator[str],
+              result: GenerateResult) -> Iterator[str]:
         parts: list[str] = []
         try:
             for text in tokens:
                 parts.append(text)
                 yield text
         finally:
-            # 正常结束与被停止都走到这里：部分结果保留入库
-            assistant_msg["content"] = "".join(parts)
-            session.updated_at = time.time()
+            # 正常结束与被停止都走到这里：部分结果与 token 计数落库
+            session_store.update_message(
+                assistant_msg.id, "".join(parts),
+                input_tokens=result.input_tokens,
+                output_tokens=result.output_tokens)
             with self._lock:
                 self._active_session_id = None
 
@@ -122,13 +105,6 @@ class ChatEngine:
             raise ServiceError(
                 "NO_ACTIVE_GENERATION", f"会话 {session_id} 没有生成任务")
         model_manager.stop()
-
-    def _append(self, session: _Session, role: str, content: str) -> dict:
-        msg = {"id": self._next_message_id, "role": role,
-               "content": content, "created_at": time.time()}
-        self._next_message_id += 1
-        session.messages.append(msg)
-        return msg
 
 
 chat_engine = ChatEngine()
