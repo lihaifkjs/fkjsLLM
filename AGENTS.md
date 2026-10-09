@@ -5,11 +5,12 @@
 # 文档地图
 （有新的相关文档，补充在这里，并用一句话介绍文档内容）
 - [模型下载](模型下载.md)：Qwen3-14B 经 ModelScope 下载、Ollama 手工导入与本地使用手册，含 API 调用示例与坑点记录。
-- [一期PRD](docs/一期prd.md)：局域网 LLM 图形界面（Vue3 + FastAPI + llama-cpp-python）产品需求文档，MVP 范围为对话/会话/参数面板/模型加载开关/多端访问。
+- [一期PRD](docs/一期prd.md)：局域网 LLM 图形界面（Vue3 + FastAPI + llama-cpp-python）产品需求文档，MVP 范围为对话/会话/参数面板/模型加载开关/多端访问。**一期已竣工（M1–M4 全部完成）**。
+- [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
 - web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 已加移动端响应式（会话抽屉/软键盘适配）；默认 mock 接口层，启动 `cd web && npm run dev`。
-- server/：后端实现（FastAPI + llama-cpp-python）。M3 已完成：SQLite 持久化（sessions/messages/settings）+ 会话 CRUD + 参数接口 + 滑窗截断；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。
+- server/：后端实现（FastAPI + llama-cpp-python）。M3 已完成：SQLite 持久化（sessions/messages/settings）+ 会话 CRUD + 参数接口 + 滑窗截断；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（现有 tool calling 基线）。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
