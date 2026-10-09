@@ -5,6 +5,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useSettingsStore } from '../stores/settings'
+import { useIsMobile } from '../composables/useIsMobile'
 import type { ApiError, InferenceParams } from '../api'
 
 // 预设只覆盖采样四参数（max_tokens/system_prompt 不动），值对齐 server/params/presets.py
@@ -31,6 +32,8 @@ const props = defineProps<{ visible: boolean }>()
 const emit = defineEmits<{ 'update:visible': [value: boolean] }>()
 
 const settingsStore = useSettingsStore()
+// 移动端抽屉全屏（M4）
+const isMobile = useIsMobile()
 
 const drawerVisible = computed({
   get: () => props.visible,
@@ -113,7 +116,7 @@ async function onSave() {
 </script>
 
 <template>
-  <el-drawer v-model="drawerVisible" title="推理参数" size="420px">
+  <el-drawer v-model="drawerVisible" title="推理参数" :size="isMobile ? '100%' : '420px'">
     <div class="params-form">
       <div class="preset-row">
         <el-button

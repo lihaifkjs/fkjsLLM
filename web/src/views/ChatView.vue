@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// 桌面对话主界面：左侧会话列表（M3），右侧参数抽屉（M3），输入框上方为轻量可观测状态行（PRD 3.4）
+// 对话主界面：桌面双栏（左侧会话列表），移动端单栏 + 抽屉式会话列表（M4，PRD 3.5）；
+// 右侧参数抽屉（M3），输入框上方为轻量可观测状态行（PRD 3.4）
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Menu } from '@element-plus/icons-vue'
 import ChatInput from '../components/ChatInput.vue'
 import DebugDrawer from '../components/DebugDrawer.vue'
 import MessageBubble from '../components/MessageBubble.vue'
@@ -9,6 +11,7 @@ import ModelStatusBar from '../components/ModelStatusBar.vue'
 import SessionList from '../components/SessionList.vue'
 import ParamsView from './ParamsView.vue'
 import { useChatStream } from '../composables/useChatStream'
+import { useIsMobile } from '../composables/useIsMobile'
 import { useModelStore } from '../stores/model'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
@@ -26,6 +29,10 @@ const listRef = ref<HTMLElement>()
 const debugVisible = ref(false)
 const debugMessage = ref<ChatMessage | null>(null)
 const paramsVisible = ref(false)
+
+// 移动端（M4）：侧栏改为抽屉，由顶栏汉堡按钮打开；选中会话后抽屉自动关闭
+const isMobile = useIsMobile()
+const sessionsDrawerVisible = ref(false)
 
 // 新 token / 新消息时滚到底部
 watch(
@@ -78,6 +85,13 @@ onBeforeUnmount(() => modelStore.stopPolling())
 <template>
   <el-container class="chat-view">
     <el-header class="header">
+      <el-button
+        v-if="isMobile"
+        class="menu-btn"
+        :icon="Menu"
+        text
+        @click="sessionsDrawerVisible = true"
+      />
       <span class="title">{{ sessionStore.title }}</span>
       <div class="header-right">
         <el-button size="small" @click="paramsVisible = true">参数</el-button>
@@ -85,7 +99,7 @@ onBeforeUnmount(() => modelStore.stopPolling())
       </div>
     </el-header>
     <el-container class="body">
-      <el-aside width="220px" class="sidebar">
+      <el-aside v-if="!isMobile" width="220px" class="sidebar">
         <SessionList :disabled="streaming" />
       </el-aside>
       <el-main class="main">
@@ -116,6 +130,15 @@ onBeforeUnmount(() => modelStore.stopPolling())
         </div>
       </el-main>
     </el-container>
+    <el-drawer
+      v-model="sessionsDrawerVisible"
+      direction="ltr"
+      size="260px"
+      title="会话"
+      class="sessions-drawer"
+    >
+      <SessionList :disabled="streaming" @selected="sessionsDrawerVisible = false" />
+    </el-drawer>
     <DebugDrawer v-model:visible="debugVisible" :message="debugMessage" />
     <ParamsView v-model:visible="paramsVisible" />
   </el-container>
@@ -123,7 +146,9 @@ onBeforeUnmount(() => modelStore.stopPolling())
 
 <style scoped>
 .chat-view {
+  /* dvh 随移动端软键盘/地址栏收缩，避免输入框被遮挡；vh 为旧浏览器兜底 */
   height: 100vh;
+  height: 100dvh;
 }
 .header {
   display: flex;
@@ -131,26 +156,30 @@ onBeforeUnmount(() => modelStore.stopPolling())
   justify-content: space-between;
   border-bottom: 1px solid #e4e7ed;
 }
+.menu-btn {
+  margin-right: 4px;
+}
 .header-right {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-shrink: 0;
 }
 .title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 600;
 }
 .body {
   height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
 }
 .sidebar {
   border-right: 1px solid #e4e7ed;
   background: #fafafa;
-}
-/* 小屏（手机）隐藏侧栏；会话列表抽屉化属 M4 */
-@media (max-width: 768px) {
-  .sidebar {
-    display: none;
-  }
 }
 .main {
   display: flex;
@@ -177,5 +206,26 @@ onBeforeUnmount(() => modelStore.stopPolling())
 .input-area {
   border-top: 1px solid #e4e7ed;
   padding: 12px 24px;
+  /* iPhone 底部横条安全区（配合 index.html viewport-fit=cover） */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+/* 断点与 useIsMobile.MOBILE_BREAKPOINT 一致 */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+  }
+  .header-right {
+    gap: 8px;
+  }
+  .message-list {
+    padding: 12px;
+  }
+  .status-line {
+    padding: 0 12px;
+  }
+  .input-area {
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
 }
 </style>

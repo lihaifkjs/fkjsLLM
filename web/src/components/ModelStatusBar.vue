@@ -1,12 +1,15 @@
 <script setup lang="ts">
 // 模型加载/卸载开关 + 状态展示（PRD 3.4/3.8）：加载/卸载中禁止重复操作
+// 移动端（M4）：隐藏显存文本，加载中提示精简，避免顶栏溢出
 import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useModelStore } from '../stores/model'
+import { useIsMobile } from '../composables/useIsMobile'
 import type { ModelState } from '../api'
 import type { ApiError } from '../api'
 
 const modelStore = useModelStore()
+const isMobile = useIsMobile()
 
 const STATE_META: Record<ModelState, { label: string; tag: 'info' | 'warning' | 'success' | 'danger' }> = {
   unloaded: { label: '未加载', tag: 'info' },
@@ -32,9 +35,11 @@ async function onToggle() {
   <div class="model-status-bar">
     <el-tag :type="meta.tag" disable-transitions>
       {{ meta.label }}
-      <template v-if="modelStore.state === 'loading'">（首次加载约需数十秒，请耐心等待）</template>
+      <template v-if="modelStore.state === 'loading' && !isMobile"
+        >（首次加载约需数十秒，请耐心等待）</template
+      >
     </el-tag>
-    <span v-if="modelStore.status.vram_used_mb !== null" class="vram">
+    <span v-if="modelStore.status.vram_used_mb !== null && !isMobile" class="vram">
       显存 {{ modelStore.status.vram_used_mb }} MB
     </span>
     <span v-if="modelStore.state === 'error'" class="error-text">{{ modelStore.status.error }}</span>

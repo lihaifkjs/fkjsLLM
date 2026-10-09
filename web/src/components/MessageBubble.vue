@@ -74,6 +74,12 @@ watch(
   border-radius: 10px;
   background: #f4f4f5;
 }
+/* 移动端气泡放宽（断点与 useIsMobile.MOBILE_BREAKPOINT 一致） */
+@media (max-width: 768px) {
+  .bubble {
+    max-width: 88%;
+  }
+}
 .bubble-row.user .bubble {
   background: #d9ecff;
 }

@@ -3,6 +3,7 @@
 // 约束：新增标签页只允许「加配置 + 写组件」，不改抽屉容器与消息列表结构。
 import { computed, ref, watch, type Component } from 'vue'
 import type { ChatMessage } from '../api'
+import { useIsMobile } from '../composables/useIsMobile'
 import PlaceholderPane from './debug/PlaceholderPane.vue'
 import RawPane from './debug/RawPane.vue'
 import TokensPane from './debug/TokensPane.vue'
@@ -34,6 +35,9 @@ const drawerVisible = computed({
   set: (value: boolean) => emit('update:visible', value),
 })
 
+// 移动端抽屉全屏（M4）
+const isMobile = useIsMobile()
+
 const activeTab = ref(TABS[0]!.key)
 watch(
   () => props.visible,
@@ -44,7 +48,7 @@ watch(
 </script>
 
 <template>
-  <el-drawer v-model="drawerVisible" title="调试信息" size="480px">
+  <el-drawer v-model="drawerVisible" title="调试信息" :size="isMobile ? '100%' : '480px'">
     <el-tabs v-model="activeTab">
       <el-tab-pane v-for="tab in TABS" :key="tab.key" :label="tab.label" :name="tab.key">
         <component :is="tab.component" :title="tab.label" :message="message" />

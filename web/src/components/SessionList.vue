@@ -6,6 +6,8 @@ import { useSessionStore } from '../stores/session'
 import type { ApiError, SessionSummary } from '../api'
 
 const props = defineProps<{ disabled: boolean }>()
+// 选中/新建成功后通知父级（移动端用于自动关闭会话抽屉，桌面端无副作用）
+const emit = defineEmits<{ selected: [] }>()
 
 const sessionStore = useSessionStore()
 
@@ -22,6 +24,7 @@ async function onCreate() {
   if (guardStreaming()) return
   try {
     await sessionStore.createSession()
+    emit('selected')
   } catch (e) {
     ElMessage.error((e as ApiError).message ?? '新建会话失败')
   }
@@ -31,6 +34,7 @@ async function onSelect(id: number) {
   if (id === sessionStore.sessionId || guardStreaming()) return
   try {
     await sessionStore.openSession(id)
+    emit('selected')
   } catch (e) {
     const err = e as ApiError
     if (err.code === 'SESSION_NOT_FOUND') {
@@ -171,6 +175,12 @@ function fmtTime(epochSec: number): string {
 }
 .session-item:hover .session-actions {
   display: flex;
+}
+/* 移动端无 hover，操作图标常显（断点与 useIsMobile.MOBILE_BREAKPOINT 一致） */
+@media (max-width: 768px) {
+  .session-actions {
+    display: flex;
+  }
 }
 .session-actions .el-icon:hover {
   color: #409eff;

@@ -8,13 +8,15 @@
 - [PRD](docs/prd.md)：局域网 LLM 图形界面（Vue3 + FastAPI + llama-cpp-python）产品需求文档，MVP 范围为对话/会话/参数面板/模型加载开关/多端访问。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- web/：M2 桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），默认 mock 接口层，启动 `cd web && npm run dev`。
+- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 已加移动端响应式（会话抽屉/软键盘适配）；默认 mock 接口层，启动 `cd web && npm run dev`。
 - server/：后端实现（FastAPI + llama-cpp-python）。M3 已完成：SQLite 持久化（sessions/messages/settings）+ 会话 CRUD + 参数接口 + 滑窗截断；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
 - [后端m3实现](docs/后端m3实现.md)：M3 后端实现说明——session_store/params/滑窗的实现要点、接口增量、错误码与回归验证方法。
 - [前端m3实现](docs/前端m3实现.md)：前端 M3 实现说明——会话列表/参数面板/轻量可观测性（token/s、上下文占用）的实现要点、契约对齐情况、mock 持久化与坑点（FastAPI 400 的 detail 包装）。
+- [前端m4开发](docs/前端m4开发.md)：M4 移动端适配计划——断点统一、会话列表抽屉化、软键盘适配、小屏布局清单与验证方法、真机验收清单（§7）。
+- [前端m4实现](docs/前端m4实现.md)：M4 实现说明——useIsMobile/会话抽屉/dvh 与安全区/抽屉全屏的实现要点、模拟视口实测记录；真机局域网联调为遗留项。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。

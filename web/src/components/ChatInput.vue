@@ -32,6 +32,7 @@ function submit() {
       :autosize="{ minRows: 2, maxRows: 8 }"
       :disabled="inputDisabled"
       :placeholder="placeholder"
+      enterkeyhint="send"
       @keydown.enter.exact.prevent="submit"
     />
     <el-button v-if="streaming" type="danger" @click="emit('stop')">停止生成</el-button>
