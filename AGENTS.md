@@ -5,7 +5,7 @@
 # 文档地图
 （有新的相关文档，补充在这里，并用一句话介绍文档内容）
 - [模型下载](模型下载.md)：Qwen3-14B 经 ModelScope 下载、Ollama 手工导入与本地使用手册，含 API 调用示例与坑点记录。
-- [PRD](docs/prd.md)：局域网 LLM 图形界面（Vue3 + FastAPI + llama-cpp-python）产品需求文档，MVP 范围为对话/会话/参数面板/模型加载开关/多端访问。
+- [一期PRD](docs/一期prd.md)：局域网 LLM 图形界面（Vue3 + FastAPI + llama-cpp-python）产品需求文档，MVP 范围为对话/会话/参数面板/模型加载开关/多端访问。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
 - web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 已加移动端响应式（会话抽屉/软键盘适配）；默认 mock 接口层，启动 `cd web && npm run dev`。

@@ -1,4 +1,4 @@
-# PRD：LLM全流程
+# 一期 PRD：LLM全流程
 
 > 状态：待评审 | 日期：2026-10-07
 > 目标：在 Windows（RTX 4070 12GB）上运行一个 Web 图形界面的本地 LLM，支持局域网内多设备（Mac / iPhone / Android 浏览器）访问。
