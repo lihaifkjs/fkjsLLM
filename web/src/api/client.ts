@@ -1,40 +1,25 @@
 // 真实 HTTP/SSE 客户端（VITE_API_MODE=real 时使用，经 vite 代理到后端 :8000）
-// EventSource 不支持 POST，SSE 用 fetch + ReadableStream 手动解析（技术方案 §5.4）
+// SSE 帧解析与错误体解析在 api/sse.ts，chat 与实验场 generate 共用（M6 计划 §8）
 import type {
   ApiError,
   ChatMessage,
   ChatRequest,
+  ChatSseEvent,
   ChatStreamCallbacks,
   ChatStreamHandle,
-  ChatSseEvent,
+  Experiment,
+  ExperimentSummary,
   InferenceParams,
   LlmApi,
   ModelStatus,
+  Observability,
+  RunStreamCallbacks,
   Session,
   SessionSummary,
 } from './types'
+import { parseErrorBody, postSse } from './sse'
 
 const BASE = '/api'
-
-async function parseErrorBody(res: Response): Promise<ApiError> {
-  try {
-    // FastAPI 的 HTTPException 会把 {code,message} 包进 detail 字段（400 类错误），
-    // ServiceError 全局处理器则直接返回顶层 {code,message}（409 类错误），两种都要解
-    const body = (await res.json()) as {
-      code?: string
-      message?: string
-      detail?: { code?: string; message?: string } | string
-    }
-    const payload = typeof body.detail === 'object' && body.detail !== null ? body.detail : body
-    return {
-      code: payload.code ?? `http_${res.status}`,
-      message:
-        payload.message ?? (typeof body.detail === 'string' ? body.detail : res.statusText),
-    }
-  } catch {
-    return { code: `http_${res.status}`, message: res.statusText }
-  }
-}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(BASE + path, init)
@@ -50,67 +35,55 @@ function jsonInit(method: string, body: unknown): RequestInit {
   }
 }
 
-// 解析 SSE 帧：按空行分帧，帧内取 event: / data: 行
-function parseSseFrames(buffer: string): { frames: { event: string; data: string }[]; rest: string } {
-  const frames: { event: string; data: string }[] = []
-  const parts = buffer.split('\n\n')
-  const rest = parts.pop() ?? ''
-  for (const part of parts) {
-    let event = 'message'
-    const dataLines: string[] = []
-    for (const line of part.split('\n')) {
-      if (line.startsWith('event:')) event = line.slice(6).trim()
-      else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
-    }
-    if (dataLines.length > 0) frames.push({ event, data: dataLines.join('\n') })
-  }
-  return { frames, rest }
+function chat(req: ChatRequest, cb: ChatStreamCallbacks): ChatStreamHandle {
+  return postSse('/chat', req, {
+    onFrame: (frame) => cb.onFrame?.(frame),
+    onEvent: (event, data) => {
+      switch (event as ChatSseEvent) {
+        case 'meta':
+          cb.onMeta(data as never)
+          break
+        case 'token':
+          cb.onToken(data as never)
+          break
+        case 'done':
+          cb.onDone(data as never)
+          break
+        case 'error':
+          cb.onError(data as ApiError)
+          break
+      }
+    },
+    onError: cb.onError,
+  })
 }
 
-function chat(req: ChatRequest, cb: ChatStreamCallbacks): ChatStreamHandle {
-  const controller = new AbortController()
-  void (async () => {
-    try {
-      const res = await fetch(`${BASE}/chat`, { ...jsonInit('POST', req), signal: controller.signal })
-      if (!res.ok || !res.body) {
-        cb.onError(res.body ? await parseErrorBody(res) : { code: 'no_body', message: '响应无流式内容' })
-        return
+// 实验 run 生成：帧协议与 chat 完全一致（M6 计划 §4.3），无 onFrame（实验不进调试抽屉）
+function generateRun(
+  experimentId: number,
+  runId: number,
+  cb: RunStreamCallbacks,
+): ChatStreamHandle {
+  return postSse(`/experiments/${experimentId}/runs/${runId}/generate`, {}, {
+    onEvent: (event, data) => {
+      switch (event as ChatSseEvent) {
+        case 'meta':
+          cb.onMeta?.(data as never)
+          break
+        case 'token':
+          cb.onToken(data as never)
+          break
+        case 'done':
+          cb.onDone(data as never)
+          break
+        case 'error':
+          cb.onError(data as ApiError)
+          break
       }
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const { frames, rest } = parseSseFrames(buffer)
-        buffer = rest
-        for (const frame of frames) {
-          cb.onFrame?.({ time: Date.now() / 1000, event: frame.event, data: frame.data })
-          const data = JSON.parse(frame.data)
-          switch (frame.event as ChatSseEvent) {
-            case 'meta':
-              cb.onMeta(data)
-              break
-            case 'token':
-              cb.onToken(data)
-              break
-            case 'done':
-              cb.onDone(data)
-              break
-            case 'error':
-              cb.onError(data)
-              break
-          }
-        }
-      }
-    } catch (e) {
-      if (!controller.signal.aborted) {
-        cb.onError({ code: 'network', message: e instanceof Error ? e.message : String(e) })
-      }
-    }
-  })()
-  return { abort: () => controller.abort() }
+    },
+    // HTTP 层错误（404 EXPERIMENT_NOT_FOUND / RUN_NOT_FOUND、409 GENERATION_BUSY）与帧 error 同通道
+    onError: cb.onError,
+  })
 }
 
 export const api: LlmApi = {
@@ -123,9 +96,18 @@ export const api: LlmApi = {
   renameSession: (sessionId, title) =>
     request<Session>(`/sessions/${sessionId}`, jsonInit('PATCH', { title })),
   deleteSession: (sessionId) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
+  getObservability: (sessionId, messageId) =>
+    request<Observability>(`/sessions/${sessionId}/messages/${messageId}/observability`),
   getParams: () => request<InferenceParams>('/params'),
   saveParams: (patch) => request<InferenceParams>('/params', jsonInit('PUT', patch)),
   getModelStatus: () => request<ModelStatus>('/model/status'),
   loadModel: () => request<ModelStatus>('/model/load', { method: 'POST' }),
   unloadModel: () => request<ModelStatus>('/model/unload', { method: 'POST' }),
+  listExperiments: () => request<ExperimentSummary[]>('/experiments'),
+  createExperiment: (req) => request<Experiment>('/experiments', jsonInit('POST', req)),
+  getExperiment: (id) => request<Experiment>(`/experiments/${id}`),
+  deleteExperiment: (id) => request<void>(`/experiments/${id}`, { method: 'DELETE' }),
+  generateRun,
+  stopRun: (experimentId, runId) =>
+    request<void>(`/experiments/${experimentId}/runs/${runId}/stop`, { method: 'POST' }),
 }

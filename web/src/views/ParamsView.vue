@@ -6,6 +6,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useSettingsStore } from '../stores/settings'
 import { useIsMobile } from '../composables/useIsMobile'
+import { PARAM_RANGES, validateParamFields } from '../utils/paramFields'
 import type { ApiError, InferenceParams } from '../api'
 
 // 预设只覆盖采样四参数（max_tokens/system_prompt 不动），值对齐 server/params/presets.py
@@ -80,12 +81,7 @@ function applyPreset(key: string) {
 
 // 校验规则与后端 _validate 一致，先拦一道；后端 400 时把 message 提示给用户
 function validate(): string | null {
-  if (form.temperature < 0) return 'temperature 必须 ≥ 0'
-  if (!(form.top_p > 0 && form.top_p <= 1)) return 'top_p 必须在 (0, 1] 区间'
-  if (!Number.isInteger(form.top_k) || form.top_k < 0) return 'top_k 必须是非负整数'
-  if (form.repetition_penalty <= 0) return 'repetition_penalty 必须 > 0'
-  if (!Number.isInteger(form.max_tokens) || form.max_tokens < 1) return 'max_tokens 必须是正整数'
-  return null
+  return validateParamFields(form)
 }
 
 async function onSave() {
@@ -135,23 +131,53 @@ async function onSave() {
 
       <div class="field">
         <span class="field-label">temperature（≥ 0）</span>
-        <el-slider v-model="form.temperature" :min="0" :max="2" :step="0.05" show-input />
+        <el-slider
+          v-model="form.temperature"
+          :min="PARAM_RANGES.temperature.min"
+          :max="PARAM_RANGES.temperature.max"
+          :step="PARAM_RANGES.temperature.step"
+          show-input
+        />
       </div>
       <div class="field">
         <span class="field-label">top_p（0, 1]</span>
-        <el-slider v-model="form.top_p" :min="0" :max="1" :step="0.05" show-input />
+        <el-slider
+          v-model="form.top_p"
+          :min="PARAM_RANGES.top_p.min"
+          :max="PARAM_RANGES.top_p.max"
+          :step="PARAM_RANGES.top_p.step"
+          show-input
+        />
       </div>
       <div class="field">
         <span class="field-label">top_k（非负整数）</span>
-        <el-slider v-model="form.top_k" :min="0" :max="100" :step="1" show-input />
+        <el-slider
+          v-model="form.top_k"
+          :min="PARAM_RANGES.top_k.min"
+          :max="PARAM_RANGES.top_k.max"
+          :step="PARAM_RANGES.top_k.step"
+          show-input
+        />
       </div>
       <div class="field">
         <span class="field-label">repetition_penalty（&gt; 0）</span>
-        <el-slider v-model="form.repetition_penalty" :min="0" :max="2" :step="0.05" show-input />
+        <el-slider
+          v-model="form.repetition_penalty"
+          :min="PARAM_RANGES.repetition_penalty.min"
+          :max="PARAM_RANGES.repetition_penalty.max"
+          :step="PARAM_RANGES.repetition_penalty.step"
+          show-input
+        />
       </div>
       <div class="field">
         <span class="field-label">max_tokens（正整数）</span>
-        <el-slider v-model="form.max_tokens" :min="1" :max="8192" :step="1" show-input />
+        <el-slider
+          v-model="form.max_tokens"
+          :min="PARAM_RANGES.max_tokens.min"
+          :max="PARAM_RANGES.max_tokens.max"
+          :step="PARAM_RANGES.max_tokens.step"
+          show-input
+        />
       </div>
       <div class="field">
         <span class="field-label">system prompt</span>
