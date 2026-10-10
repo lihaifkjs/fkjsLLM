@@ -23,6 +23,25 @@ PRESETS: dict[str, dict] = {
 _NUMERIC_FIELDS = [f.name for f in fields(SamplingParams)
                    if f.name != "system_prompt"]
 
+# M6 实验单组参数只允许这四项（决策 D：repetition_penalty 用全局当前值，
+# system_prompt 快照自创建时全局值，均不可按组覆盖）
+RUN_FIELDS = ("temperature", "top_p", "top_k", "max_tokens")
+
+
+def validate_run_params(patch: dict) -> dict:
+    """校验实验单组参数：只允许 RUN_FIELDS 四项且缺一不可，范围规则同全局。
+
+    返回规范化后的四参数字典；非法值抛 ValueError（api 层转 400）。
+    """
+    unknown = set(patch) - set(RUN_FIELDS)
+    if unknown:
+        raise ValueError(f"未知参数字段：{sorted(unknown)}")
+    missing = set(RUN_FIELDS) - set(patch)
+    if missing:
+        raise ValueError(f"缺少参数字段：{sorted(missing)}")
+    _validate({**get(), **patch})
+    return {k: patch[k] for k in RUN_FIELDS}
+
 
 def _validate(values: dict):
     """范围校验，非法值抛 ValueError（api 层转 400）。"""
@@ -53,6 +72,23 @@ def get_params() -> SamplingParams:
         return SamplingParams()
     data = json.loads(raw)
     return SamplingParams(**{f.name: data[f.name] for f in fields(SamplingParams)})
+
+
+def snapshot() -> dict:
+    """生效参数快照（M5 随消息落库）：参数全量 + 命中预设 + 来源标注。
+
+    source = stored（settings 表有用户存档）/ default（全局默认值）。
+    """
+    raw = session_store.get_setting(SETTINGS_KEY)
+    if raw is None:
+        values = {f.name: getattr(SamplingParams(), f.name)
+                  for f in fields(SamplingParams)}
+        source = "default"
+    else:
+        data = json.loads(raw)
+        values = {f.name: data[f.name] for f in fields(SamplingParams)}
+        source = "stored"
+    return {**values, "preset": _match_preset(values), "source": source}
 
 
 def get() -> dict:
