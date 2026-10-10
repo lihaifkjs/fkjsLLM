@@ -2,6 +2,7 @@
 // 对话主界面：桌面双栏（左侧会话列表），移动端单栏 + 抽屉式会话列表（M4，PRD 3.5）；
 // 右侧参数抽屉（M3），输入框上方为轻量可观测状态行（PRD 3.4）
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Menu } from '@element-plus/icons-vue'
 import ChatInput from '../components/ChatInput.vue'
@@ -23,6 +24,7 @@ const CTX_WARN_RATIO = 0.8
 const modelStore = useModelStore()
 const sessionStore = useSessionStore()
 const settingsStore = useSettingsStore()
+const router = useRouter()
 const { streaming, tokensPerSec, lastUsage, send, stop } = useChatStream()
 
 const listRef = ref<HTMLElement>()
@@ -52,7 +54,7 @@ watch(
   },
 )
 
-// 每轮 done 后的上下文占用：input_tokens / (n_ctx - max_tokens)；input_tokens 为后端近似值
+// 每轮 done 后的上下文占用：input_tokens / (n_ctx - max_tokens)；input_tokens 为后端精确值（M5）
 const contextUsage = computed(() => {
   if (!lastUsage.value) return null
   const budget = settingsStore.contextBudget
@@ -94,6 +96,7 @@ onBeforeUnmount(() => modelStore.stopPolling())
       />
       <span class="title">{{ sessionStore.title }}</span>
       <div class="header-right">
+        <el-button size="small" @click="router.push('/lab')">实验场</el-button>
         <el-button size="small" @click="paramsVisible = true">参数</el-button>
         <ModelStatusBar />
       </div>
