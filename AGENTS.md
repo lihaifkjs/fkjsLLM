@@ -9,8 +9,8 @@
 - [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 已加移动端响应式（会话抽屉/软键盘适配）；默认 mock 接口层，启动 `cd web && npm run dev`。
-- server/：后端实现（FastAPI + llama-cpp-python）。M3 已完成：SQLite 持久化（sessions/messages/settings）+ 会话 CRUD + 参数接口 + 滑窗截断；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（现有 tool calling 基线）。
+- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6 新增 `lab/` 实验编排模块与 experiments/experiment_runs 表（user_version 2）；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍）。
+- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6 /lab 参数实验场（多栏串行对比）；默认 mock 接口层，启动 `cd web && npm run dev`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
@@ -18,6 +18,12 @@
 - [前端m3实现](docs/前端m3实现.md)：前端 M3 实现说明——会话列表/参数面板/轻量可观测性（token/s、上下文占用）的实现要点、契约对齐情况、mock 持久化与坑点（FastAPI 400 的 detail 包装）。
 - [前端m4开发](docs/前端m4开发.md)：M4 移动端适配计划——断点统一、会话列表抽屉化、软键盘适配、小屏布局清单与验证方法、真机验收清单（§7）。
 - [前端m4实现](docs/前端m4实现.md)：M4 实现说明——useIsMobile/会话抽屉/dvh 与安全区/抽屉全屏的实现要点、模拟视口实测记录；真机局域网联调为遗留项。
+- [M5开发计划](docs/M5开发计划.md)：M5 可观测性面板开发计划——调试抽屉 4 标签页填实 + 后端 prompt 落库/精确 usage/性能计时，含决策记录与风险坑点（含 think 块前缀差分负值修复）。**M5 已竣工**。
+- [后端m5实现](docs/后端m5实现.md)：M5 后端实现说明——prompt 渲染复现/精确 usage 口径（账单 vs n_p_eval）/perf 计时/schema 迁移（user_version）/observability 端点与 404 MESSAGE_NOT_FOUND，含 spike 对拍验证方法与私有 API 风险。
+- [前端m5实现](docs/前端m5实现.md)：M5 前端实现说明——useObservability 数据通道、四标签页数据流、占比条与 KV 复用提示、mock 自洽模拟、mock+real 双模式验证记录。
+- [M6开发计划](docs/M6开发计划.md)：M6 参数实验场开发计划——独立路由 /lab、experiments/experiment_runs 独立存储、前端串行队列、四项实验参数，含决策记录（A–F）与风险坑点。
+- [后端m6实现](docs/后端m6实现.md)：M6 后端实现说明——lab 编排模块/实验表迁移（user_version 2）/validate_run_params/SSE 与错误码清单，含迁移三路径与 curl 全流程实测。
+- [前端m6实现](docs/前端m6实现.md)：M6 前端实现说明——sse.ts 公共帧封装、lab.ts 串行队列状态机、LabView 三组件与 paramFields 共用抽取、param_sets 契约修复记录、real 主干对拍数值；停止/历史/互抢锁 real 未验为遗留。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。
