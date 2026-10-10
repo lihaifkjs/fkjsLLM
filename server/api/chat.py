@@ -39,10 +39,17 @@ def _stream(meta, tokens: Iterator[str], result) -> Iterator[str]:
     try:
         for text in tokens:
             yield _sse("token", {"text": text})
-        yield _sse("done", {"usage": {
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }})
+        yield _sse("done", {
+            "usage": {
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+            },
+            "timing": {
+                "ttft_ms": result.ttft_ms,
+                "prefill_ms": result.prefill_ms,
+                "decode_ms": result.decode_ms,
+            },
+        })
     except ServiceError as e:
         yield _sse("error", {"code": e.code, "message": e.message})
     except Exception as e:  # 推理崩溃也要以 error 帧收尾，不能让流裸断

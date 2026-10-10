@@ -5,13 +5,15 @@
 """
 import gc
 import threading
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Iterator
 
-from llama_cpp import Llama
+from llama_cpp import Llama, llama_cpp
 
 from config import SamplingParams, config
+from model_manager import prompt_render
 
 
 class ModelState(str, Enum):
@@ -33,10 +35,23 @@ class ServiceError(Exception):
 
 @dataclass
 class GenerateResult:
-    """generate() 结束时回填的元信息（usage 随流末帧才可得）。"""
+    """generate() 结束时回填的元信息（M5：usage 精确值 + 性能计时）。
+
+    input_tokens 为账单口径（渲染后整段 tokenize）；prompt_eval_tokens 为
+    本轮实际 prefill 数（n_p_eval），KV 前缀复用下更小，差值即复用的算力。
+    prefill_ms/decode_ms 取自 llama_perf_context（纯图计算耗时）；
+    ttft_ms 是墙钟（含模板渲染与 tokenize 开销），三者口径不同属预期。
+    """
     input_tokens: int | None = None
     output_tokens: int = 0
     stopped: bool = False
+    prompt_text: str | None = None
+    prompt_messages: list[dict] | None = None
+    seg_tokens: dict | None = None
+    prompt_eval_tokens: int | None = None
+    ttft_ms: float | None = None
+    prefill_ms: float | None = None
+    decode_ms: float | None = None
 
 
 @dataclass
@@ -152,11 +167,14 @@ class ModelManager:
     def _iterate(self, llm: Llama, messages: list[dict],
                  params: SamplingParams, result: GenerateResult,
                  stop_event: threading.Event) -> Iterator[str]:
-        # 输入 token 数：流式接口不返回 usage，逐条 tokenize 求和近似
-        # （不含 chat template 自身开销，够前端做超限提示用）
-        result.input_tokens = sum(
-            len(llm.tokenize(m["content"].encode("utf-8"), add_bos=False))
-            for m in messages)
+        # 渲染完整 prompt 并精确计数（账单口径），同时按段统计 token 占比
+        result.prompt_messages = messages
+        result.prompt_text = prompt_render.render_prompt(llm, messages)
+        result.input_tokens = prompt_render.count_text(llm, result.prompt_text)
+        result.seg_tokens = prompt_render.segment_tokens(llm, messages)
+        # verbose=False 时 llama-cpp 不自动重置计时，需手动——
+        # 全局生成锁保证单路，perf 计数器无并发干扰
+        llm._ctx.reset_timings()
         stream = llm.create_chat_completion(
             messages=messages,
             temperature=params.temperature,
@@ -166,17 +184,31 @@ class ModelManager:
             max_tokens=params.max_tokens,
             stream=True,
         )
-        for chunk in stream:
-            if stop_event.is_set():
-                result.stopped = True
-                break
-            choices = chunk.get("choices") or []
-            if not choices:
-                continue
-            text = choices[0].get("delta", {}).get("content")
-            if text:
-                result.output_tokens += 1
-                yield text
+        t0 = time.perf_counter()
+        try:
+            for chunk in stream:
+                if stop_event.is_set():
+                    result.stopped = True
+                    break
+                choices = chunk.get("choices") or []
+                if not choices:
+                    continue
+                text = choices[0].get("delta", {}).get("content")
+                if text:
+                    if result.ttft_ms is None:
+                        result.ttft_ms = (time.perf_counter() - t0) * 1000
+                    yield text
+        finally:
+            # 正常结束、被 stop、中途异常都尽力读 perf 计数器
+            perf = llama_cpp.llama_perf_context(llm._ctx.ctx)
+            result.prefill_ms = perf.t_p_eval_ms
+            result.decode_ms = perf.t_eval_ms
+            result.prompt_eval_tokens = perf.n_p_eval
+            # n_eval 是 decode 步数；首个生成 token 来自 prefill 的 logits
+            # 不占 decode 步，故采样 token 总数 = n_eval + 1（发生过生成时），
+            # 与 llama-cpp 非流式 usage.completion_tokens 口径一致
+            result.output_tokens = (perf.n_eval + 1) if (
+                perf.n_p_eval > 0 or perf.n_eval > 0) else 0
 
     def count_tokens(self, text: str) -> int:
         """用当前模型 tokenize 计数——滑窗截断（chat/context.py）调用。"""

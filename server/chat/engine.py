@@ -3,15 +3,16 @@
 不知道 HTTP，也不直接碰模型实例——只经 model_manager 推理；
 会话/消息持久化委托 session_store，自身只保留运行态（当前生成会话）。
 """
+import json
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Iterator
 
 from chat.context import fit_window
 from config import SamplingParams, config
 from model_manager.manager import GenerateResult, ServiceError, model_manager
-from params.presets import get_params
-from session_store.base import Message
+from params.presets import snapshot as params_snapshot
+from session_store.base import Message, MessageObservability
 from session_store.sqlite_store import session_store
 
 DEFAULT_TITLE = "新会话"
@@ -56,8 +57,8 @@ class ChatEngine:
                 session.id, "assistant", "")
             self._active_session_id = session.id
 
-            prompt, params = self._build_prompt(session.id,
-                                                assistant_msg.id)
+            prompt, params, snapshot = self._build_prompt(
+                session.id, assistant_msg.id)
             meta = ChatMeta(session_id=session.id,
                             user_message_id=user_msg.id,
                             assistant_message_id=assistant_msg.id,
@@ -65,36 +66,52 @@ class ChatEngine:
 
         result = GenerateResult()
         tokens = model_manager.generate(prompt, params, result)
-        return meta, self._wrap(assistant_msg, tokens, result), result
+        return meta, self._wrap(assistant_msg, tokens, result, snapshot), result
 
     def _build_prompt(self, session_id: int,
-                      exclude_message_id: int) -> tuple[list[dict], SamplingParams]:
-        """拼上下文并滑窗截断；同时返回本次生效的推理参数。
+                      exclude_message_id: int
+                      ) -> tuple[list[dict], SamplingParams, str]:
+        """拼上下文并滑窗截断；同时返回本次生效参数与其快照（M5 落库）。
 
         参数每次生成前从 params 模块读取——改参数立即生效，不重载模型。
         """
         history = [{"role": m.role, "content": m.content}
                    for m in session_store.get_messages(session_id)
                    if m.id != exclude_message_id]
-        params = get_params()
+        snap = params_snapshot()
+        params = SamplingParams(
+            **{f.name: snap[f.name] for f in fields(SamplingParams)})
         prompt = fit_window(params.system_prompt, history,
                             budget=config.n_ctx - params.max_tokens,
                             count_tokens=model_manager.count_tokens)
-        return prompt, params
+        return prompt, params, json.dumps(snap, ensure_ascii=False)
 
     def _wrap(self, assistant_msg: Message, tokens: Iterator[str],
-              result: GenerateResult) -> Iterator[str]:
+              result: GenerateResult, snapshot: str) -> Iterator[str]:
         parts: list[str] = []
         try:
             for text in tokens:
                 parts.append(text)
                 yield text
         finally:
-            # 正常结束与被停止都走到这里：部分结果与 token 计数落库
+            # 正常结束与被停止都走到这里：部分结果与观测数据落库
             session_store.update_message(
                 assistant_msg.id, "".join(parts),
-                input_tokens=result.input_tokens,
-                output_tokens=result.output_tokens)
+                MessageObservability(
+                    input_tokens=result.input_tokens,
+                    output_tokens=result.output_tokens,
+                    params_snapshot=snapshot,
+                    prompt_text=result.prompt_text,
+                    prompt_messages=json.dumps(result.prompt_messages,
+                                               ensure_ascii=False)
+                    if result.prompt_messages is not None else None,
+                    prompt_seg_tokens=json.dumps(result.seg_tokens)
+                    if result.seg_tokens is not None else None,
+                    prompt_eval_tokens=result.prompt_eval_tokens,
+                    ttft_ms=result.ttft_ms,
+                    prefill_ms=result.prefill_ms,
+                    decode_ms=result.decode_ms,
+                ))
             with self._lock:
                 self._active_session_id = None
 
