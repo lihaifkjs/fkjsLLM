@@ -1,4 +1,4 @@
-// SSE 公共封装：chat 与实验场 generate 共用帧协议（meta/token/done/error，M6 计划 §8 帧协议复用）
+// SSE 公共封装：chat 流式帧协议（meta/token/done/error）的 fetch + ReadableStream 手动解析
 // EventSource 不支持 POST，统一用 fetch + ReadableStream 手动解析（技术方案 §5.4）
 import type { ApiError, SseFrame } from './types'
 

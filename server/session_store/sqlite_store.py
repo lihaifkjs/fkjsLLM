@@ -10,8 +10,8 @@ from pathlib import Path
 
 from config import config
 from model_manager.manager import ServiceError
-from session_store.base import (Experiment, ExperimentRun, Message,
-                                MessageObservability, RunResult, Session)
+from session_store.base import (Compression, CompressionInput, Message,
+                                MessageObservability, Session)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (
@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL  -- JSON 字符串
 );
 
--- M6 参数实验场：与正式会话完全隔离，观测列口径同 messages 表
+-- M6 参数实验场已下线（2026-10-11 决策），代码已拆除；下面两张表保留仅为维持
+-- user_version 迁移链（M6.5 compressions 建在 user_version 3 上），不再写入
 CREATE TABLE IF NOT EXISTS experiments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   prompt TEXT NOT NULL,
@@ -66,12 +67,32 @@ CREATE TABLE IF NOT EXISTS experiment_runs (
 
 CREATE INDEX IF NOT EXISTS idx_runs_experiment
   ON experiment_runs(experiment_id, seq);
+
+-- M6.5 摘要压缩：兼任压缩历史与会话当前生效摘要缓存（每会话取 id 最大一条）
+CREATE TABLE IF NOT EXISTS compressions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  trigger_message_id INTEGER NOT NULL,  -- 触发本次压缩的 assistant 消息 id
+  prev_summary TEXT NOT NULL DEFAULT '',-- 压缩输入：既有摘要（增量追加）
+  source_messages TEXT NOT NULL,        -- 压缩输入：新纳入消息 [{role,content}] JSON
+  source_prompt TEXT NOT NULL,          -- 压缩调用的完整渲染 prompt
+  summary TEXT NOT NULL,                -- 产出：新摘要（即当前生效摘要）
+  covered_upto INTEGER NOT NULL,        -- 摘要覆盖的最大 message id（增量游标）
+  source_tokens INTEGER, summary_tokens INTEGER,
+  input_tokens INTEGER, output_tokens INTEGER,
+  ttft_ms REAL, prefill_ms REAL, decode_ms REAL,
+  created_at REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_compressions_session
+  ON compressions(session_id, id);
 """
 
-# user_version 1：M5 观测列；2：M6 experiments/experiment_runs 两表
+# user_version 1：M5 观测列；2：M6 experiments/experiment_runs 两表；
+# 3：M6.5 compressions 表
 # 老库（一期建成，version 0）走 ALTER TABLE 补列；
-# M6 两表在建库脚本里就是 IF NOT EXISTS，新老库都覆盖，迁移只推版本号
-_SCHEMA_VERSION = 2
+# M6/M6.5 的表在建库脚本里就是 IF NOT EXISTS，新老库都覆盖，迁移只推版本号
+_SCHEMA_VERSION = 3
 _M5_COLUMNS = [
     "prompt_text TEXT",
     "prompt_messages TEXT",
@@ -87,13 +108,11 @@ _MESSAGE_COLS = ("id, session_id, role, content, created_at,"
                  " prompt_text, prompt_messages, prompt_seg_tokens,"
                  " prompt_eval_tokens, ttft_ms, prefill_ms, decode_ms")
 
-_EXPERIMENT_COLS = "id, prompt, system_prompt, created_at"
-
-_RUN_COLS = ("id, experiment_id, seq, params, status, content, error,"
-             " created_at, finished_at,"
-             " input_tokens, output_tokens, prompt_eval_tokens,"
-             " prompt_text, prompt_messages, prompt_seg_tokens,"
-             " ttft_ms, prefill_ms, decode_ms")
+_COMPRESSION_COLS = ("id, session_id, trigger_message_id, prev_summary,"
+                     " source_messages, source_prompt, summary, covered_upto,"
+                     " source_tokens, summary_tokens,"
+                     " input_tokens, output_tokens,"
+                     " ttft_ms, prefill_ms, decode_ms, created_at")
 
 
 class SqliteSessionStore:
@@ -242,101 +261,65 @@ class SqliteSessionStore:
                 (key, value))
             self._conn.commit()
 
-    # ---------- 实验（M6 参数实验场） ----------
+    # ---------- 摘要压缩（M6.5） ----------
 
-    def create_experiment(self, prompt: str, system_prompt: str,
-                          param_sets: list[str]) -> Experiment:
-        """建实验并连 runs 一起插入（seq 按 param_sets 顺序，status=pending）。
-
-        param_sets 元素为已校验过的四参数 JSON 字符串。
-        """
+    def add_compression(self, record: CompressionInput) -> Compression:
+        """落库一次压缩记录；会话当前生效摘要即最新一条的 summary。"""
         now = time.time()
         with self._lock:
             cur = self._conn.execute(
-                "INSERT INTO experiments (prompt, system_prompt, created_at)"
-                " VALUES (?, ?, ?)", (prompt, system_prompt, now))
-            experiment_id = cur.lastrowid
-            self._conn.executemany(
-                "INSERT INTO experiment_runs"
-                " (experiment_id, seq, params, created_at)"
-                " VALUES (?, ?, ?, ?)",
-                [(experiment_id, seq, params, now)
-                 for seq, params in enumerate(param_sets)])
+                "INSERT INTO compressions"
+                " (session_id, trigger_message_id, prev_summary,"
+                " source_messages, source_prompt, summary, covered_upto,"
+                " source_tokens, summary_tokens, input_tokens, output_tokens,"
+                " ttft_ms, prefill_ms, decode_ms, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (record.session_id, record.trigger_message_id,
+                 record.prev_summary, record.source_messages,
+                 record.source_prompt, record.summary, record.covered_upto,
+                 record.source_tokens, record.summary_tokens,
+                 record.input_tokens, record.output_tokens,
+                 record.ttft_ms, record.prefill_ms, record.decode_ms, now))
             self._conn.commit()
-            return Experiment(id=experiment_id, prompt=prompt,
-                              system_prompt=system_prompt, created_at=now)
+            return Compression(id=cur.lastrowid, created_at=now,
+                               **{f: getattr(record, f) for f in (
+                                   "session_id", "trigger_message_id",
+                                   "prev_summary", "source_messages",
+                                   "source_prompt", "summary", "covered_upto",
+                                   "source_tokens", "summary_tokens",
+                                   "input_tokens", "output_tokens",
+                                   "ttft_ms", "prefill_ms", "decode_ms")})
 
-    def get_experiment(self, experiment_id: int) -> Experiment:
+    def get_latest_compression(self, session_id: int) -> Compression | None:
+        """会话当前生效的摘要记录；从未压缩过返回 None。"""
         with self._lock:
             row = self._conn.execute(
-                f"SELECT {_EXPERIMENT_COLS} FROM experiments WHERE id = ?",
-                (experiment_id,)).fetchone()
+                f"SELECT {_COMPRESSION_COLS} FROM compressions"
+                " WHERE session_id = ? ORDER BY id DESC LIMIT 1",
+                (session_id,)).fetchone()
+        return Compression(*row) if row else None
+
+    def get_compression(self, compression_id: int) -> Compression:
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT {_COMPRESSION_COLS} FROM compressions WHERE id = ?",
+                (compression_id,)).fetchone()
         if row is None:
-            raise ServiceError("EXPERIMENT_NOT_FOUND",
-                               f"实验 {experiment_id} 不存在")
-        return Experiment(*row)
+            raise ServiceError("COMPRESSION_NOT_FOUND",
+                               f"压缩记录 {compression_id} 不存在")
+        return Compression(*row)
 
-    def list_experiments(self) -> list[Experiment]:
-        with self._lock:
-            rows = self._conn.execute(
-                f"SELECT {_EXPERIMENT_COLS} FROM experiments"
-                " ORDER BY id DESC").fetchall()
-        return [Experiment(*r) for r in rows]
-
-    def delete_experiment(self, experiment_id: int):
-        with self._lock:
-            cur = self._conn.execute(
-                "DELETE FROM experiments WHERE id = ?", (experiment_id,))
-            self._conn.commit()
-        if cur.rowcount == 0:
-            raise ServiceError("EXPERIMENT_NOT_FOUND",
-                               f"实验 {experiment_id} 不存在")
-
-    def get_runs(self, experiment_id: int) -> list[ExperimentRun]:
-        with self._lock:
-            rows = self._conn.execute(
-                f"SELECT {_RUN_COLS} FROM experiment_runs"
-                " WHERE experiment_id = ? ORDER BY seq",
-                (experiment_id,)).fetchall()
-        return [ExperimentRun(*r) for r in rows]
-
-    def get_run(self, experiment_id: int, run_id: int) -> ExperimentRun:
+    def get_compression_by_trigger(
+            self, session_id: int,
+            trigger_message_id: int) -> Compression | None:
+        """该条 assistant 消息触发的那次压缩；未触发过返回 None。"""
         with self._lock:
             row = self._conn.execute(
-                f"SELECT {_RUN_COLS} FROM experiment_runs WHERE id = ?",
-                (run_id,)).fetchone()
-        if row is None or row[1] != experiment_id:
-            raise ServiceError(
-                "RUN_NOT_FOUND",
-                f"实验 {experiment_id} 中不存在 run {run_id}")
-        return ExperimentRun(*row)
-
-    def start_run(self, run_id: int):
-        """置 running 并清空上轮 error（重试场景）；内容在 finish_run 覆盖。"""
-        with self._lock:
-            self._conn.execute(
-                "UPDATE experiment_runs SET status = 'running', error = NULL"
-                " WHERE id = ?", (run_id,))
-            self._conn.commit()
-
-    def finish_run(self, run_id: int, result: RunResult):
-        """回填生成完毕（含被停止/失败）的 run：终态、内容、观测字段。"""
-        with self._lock:
-            self._conn.execute(
-                "UPDATE experiment_runs SET status = ?, content = ?,"
-                " error = ?, finished_at = ?,"
-                " input_tokens = ?, output_tokens = ?,"
-                " prompt_eval_tokens = ?, prompt_text = ?,"
-                " prompt_messages = ?, prompt_seg_tokens = ?,"
-                " ttft_ms = ?, prefill_ms = ?, decode_ms = ?"
-                " WHERE id = ?",
-                (result.status, result.content, result.error, time.time(),
-                 result.input_tokens, result.output_tokens,
-                 result.prompt_eval_tokens, result.prompt_text,
-                 result.prompt_messages, result.prompt_seg_tokens,
-                 result.ttft_ms, result.prefill_ms, result.decode_ms,
-                 run_id))
-            self._conn.commit()
+                f"SELECT {_COMPRESSION_COLS} FROM compressions"
+                " WHERE session_id = ? AND trigger_message_id = ?"
+                " ORDER BY id DESC LIMIT 1",
+                (session_id, trigger_message_id)).fetchone()
+        return Compression(*row) if row else None
 
 
 session_store = SqliteSessionStore(config.db_path)

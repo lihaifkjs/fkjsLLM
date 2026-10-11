@@ -21,26 +21,10 @@ PRESETS: dict[str, dict] = {
 }
 
 _NUMERIC_FIELDS = [f.name for f in fields(SamplingParams)
-                   if f.name != "system_prompt"]
+                   if f.name not in ("system_prompt", "context_strategy")]
 
-# M6 实验单组参数只允许这四项（决策 D：repetition_penalty 用全局当前值，
-# system_prompt 快照自创建时全局值，均不可按组覆盖）
-RUN_FIELDS = ("temperature", "top_p", "top_k", "max_tokens")
-
-
-def validate_run_params(patch: dict) -> dict:
-    """校验实验单组参数：只允许 RUN_FIELDS 四项且缺一不可，范围规则同全局。
-
-    返回规范化后的四参数字典；非法值抛 ValueError（api 层转 400）。
-    """
-    unknown = set(patch) - set(RUN_FIELDS)
-    if unknown:
-        raise ValueError(f"未知参数字段：{sorted(unknown)}")
-    missing = set(RUN_FIELDS) - set(patch)
-    if missing:
-        raise ValueError(f"缺少参数字段：{sorted(missing)}")
-    _validate({**get(), **patch})
-    return {k: patch[k] for k in RUN_FIELDS}
+# M6.5 上下文策略枚举（决策 A）：滑窗硬截断 / 摘要压缩
+CONTEXT_STRATEGIES = ("sliding_window", "summary")
 
 
 def _validate(values: dict):
@@ -55,6 +39,9 @@ def _validate(values: dict):
         raise ValueError("repetition_penalty 必须 > 0")
     if not isinstance(values["max_tokens"], int) or values["max_tokens"] < 1:
         raise ValueError("max_tokens 必须是正整数")
+    if values["context_strategy"] not in CONTEXT_STRATEGIES:
+        raise ValueError(
+            f"context_strategy 必须是 {sorted(CONTEXT_STRATEGIES)} 之一")
 
 
 def _match_preset(values: dict) -> str:
@@ -66,12 +53,17 @@ def _match_preset(values: dict) -> str:
 
 
 def get_params() -> SamplingParams:
-    """当前生效参数（chat 每次生成前调用）。无存档时返回默认值。"""
+    """当前生效参数（chat 每次生成前调用）。无存档时返回默认值。
+
+    老存档 JSON 缺新增字段（如 M6.5 的 context_strategy）时回退默认值。
+    """
     raw = session_store.get_setting(SETTINGS_KEY)
     if raw is None:
         return SamplingParams()
     data = json.loads(raw)
-    return SamplingParams(**{f.name: data[f.name] for f in fields(SamplingParams)})
+    defaults = SamplingParams()
+    return SamplingParams(**{f.name: data.get(f.name, getattr(defaults, f.name))
+                             for f in fields(SamplingParams)})
 
 
 def snapshot() -> dict:
@@ -86,7 +78,9 @@ def snapshot() -> dict:
         source = "default"
     else:
         data = json.loads(raw)
-        values = {f.name: data[f.name] for f in fields(SamplingParams)}
+        defaults = SamplingParams()
+        values = {f.name: data.get(f.name, getattr(defaults, f.name))
+                  for f in fields(SamplingParams)}
         source = "stored"
     return {**values, "preset": _match_preset(values), "source": source}
 

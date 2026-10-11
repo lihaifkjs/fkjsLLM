@@ -84,6 +84,14 @@ export interface ChatMessage {
   created_at: number
 }
 
+// GET /sessions/{sid}/messages 出参（M6.5 起包一层）：
+// summary_covered_upto 为当前生效摘要覆盖到的最大消息 id（细节已丢失）；
+// 滑窗策略或无摘要时为 null
+export interface SessionMessages {
+  messages: ChatMessage[]
+  summary_covered_upto: number | null
+}
+
 // ---------- 参数（§3.3） ----------
 
 export interface InferenceParams {
@@ -93,6 +101,8 @@ export interface InferenceParams {
   repetition_penalty: number
   max_tokens: number
   system_prompt: string
+  // M6.5：上下文超限策略（全局开关），滑窗硬截断 / 摘要压缩
+  context_strategy: 'sliding_window' | 'summary'
   preset: string
 }
 
@@ -125,6 +135,32 @@ export interface PromptMessage {
   content: string
 }
 
+// ---------- 摘要压缩（M6.5，docs/M6.5开发计划.md §3/§6.5） ----------
+
+// 本消息触发的那次压缩：完整记录（压缩前 prompt / 摘要 / token 对比 / 耗时）
+export interface CompressionRecord {
+  triggered: true
+  id: number
+  prev_summary: string
+  source_messages: PromptMessage[]
+  source_prompt: string
+  summary: string
+  covered_upto: number
+  source_tokens: number | null
+  summary_tokens: number | null
+  input_tokens: number | null
+  output_tokens: number | null
+  timing: Timing
+}
+
+// 本轮未触发新压缩，复用既有摘要
+export interface CompressionReuse {
+  triggered: false
+  active_id: number
+}
+
+export type CompressionInfo = CompressionRecord | CompressionReuse
+
 // GET /sessions/{sid}/messages/{mid}/observability 出参；
 // user 消息或 M5 前的老消息各字段为 null，pane 据此降级到帧统计
 export interface Observability {
@@ -137,72 +173,8 @@ export interface Observability {
   params_snapshot: ParamsSnapshot | null
   prompt_text: string | null
   prompt_messages: PromptMessage[] | null
-}
-
-// ---------- 参数实验场（M6，docs/M6开发计划.md §4.3） ----------
-
-// 单组实验参数（四项；repetition_penalty 与 system_prompt 取全局值，见决策 D）
-export interface RunParams {
-  temperature: number
-  top_p: number
-  top_k: number
-  max_tokens: number
-}
-
-export type RunStatus = 'pending' | 'running' | 'done' | 'stopped' | 'error'
-
-// GET /experiments 列表项；prompt 为截取前 50 字
-export interface ExperimentSummary {
-  id: number
-  prompt: string
-  created_at: number
-  run_count: number
-}
-
-// run 全字段（观测列与 messages 表 M5 口径一致；未完成时各观测字段为 null）
-export interface ExperimentRun {
-  id: number
-  seq: number
-  params: RunParams
-  status: RunStatus
-  content: string
-  error: ApiError | null
-  input_tokens: number | null
-  output_tokens: number | null
-  prompt_eval_tokens: number | null
-  prompt_text: string | null
-  prompt_messages: PromptMessage[] | null
-  prompt_seg_tokens: SegTokens | null
-  ttft_ms: number | null
-  prefill_ms: number | null
-  decode_ms: number | null
-}
-
-// GET /experiments/{id} 详情（POST 创建响应同形）；system_prompt 为创建时的全局快照（决策 D）
-export interface Experiment {
-  id: number
-  prompt: string
-  system_prompt: string
-  created_at: number
-  runs: ExperimentRun[]
-}
-
-export interface CreateExperimentRequest {
-  prompt: string
-  param_sets: RunParams[]
-}
-
-// generate SSE 的 meta 帧（帧型与 chat 一致：meta/token/done/error）
-export interface RunMeta {
-  experiment_id: number
-  run_id: number
-}
-
-export interface RunStreamCallbacks {
-  onMeta?: (meta: RunMeta) => void
-  onToken: (token: ChatToken) => void
-  onDone: (done: ChatDone) => void
-  onError: (error: ApiError) => void
+  // M6.5：压缩调用记录（触发/复用/无 三态）
+  compression: CompressionInfo | null
 }
 
 // ---------- 统一 API 形状 ----------
@@ -213,7 +185,7 @@ export interface LlmApi {
   stopChat: (sessionId: number) => Promise<void>
   listSessions: () => Promise<SessionSummary[]>
   createSession: (title?: string) => Promise<Session>
-  getSessionMessages: (sessionId: number) => Promise<ChatMessage[]>
+  getSessionMessages: (sessionId: number) => Promise<SessionMessages>
   renameSession: (sessionId: number, title: string) => Promise<Session>
   deleteSession: (sessionId: number) => Promise<void>
   getObservability: (sessionId: number, messageId: number) => Promise<Observability>
@@ -224,12 +196,4 @@ export interface LlmApi {
   getModelStatus: () => Promise<ModelStatus>
   loadModel: () => Promise<ModelStatus>
   unloadModel: () => Promise<ModelStatus>
-  // M6 实验场：错误码 404 EXPERIMENT_NOT_FOUND / RUN_NOT_FOUND、400 INVALID_PARAMS、409 GENERATION_BUSY
-  listExperiments: () => Promise<ExperimentSummary[]>
-  createExperiment: (req: CreateExperimentRequest) => Promise<Experiment>
-  getExperiment: (id: number) => Promise<Experiment>
-  deleteExperiment: (id: number) => Promise<void>
-  // 单 run 生成（SSE，帧协议与 chat 一致）；abort() 只断本地读取，服务端中断走 stopRun
-  generateRun: (experimentId: number, runId: number, cb: RunStreamCallbacks) => ChatStreamHandle
-  stopRun: (experimentId: number, runId: number) => Promise<void>
 }

@@ -9,8 +9,8 @@
 - [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6 新增 `lab/` 实验编排模块与 experiments/experiment_runs 表（user_version 2）；当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍）。
-- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6 /lab 参数实验场（多栏串行对比）；默认 mock 接口层，启动 `cd web && npm run dev`。
+- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优）。
+- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识；默认 mock 接口层，启动 `cd web && npm run dev`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
@@ -21,12 +21,17 @@
 - [M5开发计划](docs/M5开发计划.md)：M5 可观测性面板开发计划——调试抽屉 4 标签页填实 + 后端 prompt 落库/精确 usage/性能计时，含决策记录与风险坑点（含 think 块前缀差分负值修复）。**M5 已竣工**。
 - [后端m5实现](docs/后端m5实现.md)：M5 后端实现说明——prompt 渲染复现/精确 usage 口径（账单 vs n_p_eval）/perf 计时/schema 迁移（user_version）/observability 端点与 404 MESSAGE_NOT_FOUND，含 spike 对拍验证方法与私有 API 风险。
 - [前端m5实现](docs/前端m5实现.md)：M5 前端实现说明——useObservability 数据通道、四标签页数据流、占比条与 KV 复用提示、mock 自洽模拟、mock+real 双模式验证记录。
-- [M6开发计划](docs/M6开发计划.md)：M6 参数实验场开发计划——独立路由 /lab、experiments/experiment_runs 独立存储、前端串行队列、四项实验参数，含决策记录（A–F）与风险坑点。
-- [后端m6实现](docs/后端m6实现.md)：M6 后端实现说明——lab 编排模块/实验表迁移（user_version 2）/validate_run_params/SSE 与错误码清单，含迁移三路径与 curl 全流程实测。
-- [前端m6实现](docs/前端m6实现.md)：M6 前端实现说明——sse.ts 公共帧封装、lab.ts 串行队列状态机、LabView 三组件与 paramFields 共用抽取、param_sets 契约修复记录、real 主干对拍数值；停止/历史/互抢锁 real 未验为遗留。
+- ~~[M6开发计划](docs/M6开发计划.md)~~（已废弃，功能 2026-10-11 下线）：M6 参数实验场开发计划，仅作历史存档。
+- ~~[后端m6实现](docs/后端m6实现.md)~~（已废弃）：M6 后端实现说明，仅作历史存档。
+- ~~[前端m6实现](docs/前端m6实现.md)~~（已废弃）：M6 前端实现说明，仅作历史存档。
+- [M6.5开发计划](docs/M6.5开发计划.md)：M6.5 上下文摘要压缩开发计划——compressions 表（user_version 3）/ 增量摘要策略 / 调用链标签页填实 / 有损标识，含决策记录（A–G）与风险坑点。
+- [后端m6.5实现](docs/后端m6.5实现.md)：M6.5 后端实现说明——compressions 存储/增量游标/context_strategy 参数/摘要编排双兜底/observability compression 三态字段，含 /no_think 坑点与老存档字段回退。
+- [前端m6.5实现](docs/前端m6.5实现.md)：M6.5 前端实现说明——TracePane 三态展示/策略 el-select/有损标识与 refreshCoverage/mock 压缩模拟，含 mock 浏览器实测记录。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。
+- 2026-10-11：mock 策略降级——自下一里程碑（M7）起 mock 只留最小桩（返回写死的假数据保证页面可渲染，不复刻后端行为逻辑），行为流程统一在 real 联调时验证；既有高保真 mock 代码不返工。
+- 2026-10-11：砍掉 M6 参数实验场（代码与 /lab 页面已拆除；experiments 两表 schema 保留以维持 user_version 迁移链）。理由：全局参数单例 + 多窗口手工对比已覆盖主要诉求，独立页面教学价值不足。
 
 # 角色定位
 你是一个专业的智能助手，通常你在计算机领域有很强的能力，同时你也精通其他领域。你需要协助开发一些项目。在这些项目中你一般需要和我讨论思路构建prd，技术方案，架构设计。以及完成代码的编写。
@@ -39,11 +44,15 @@
 
 2. 文档驱动开发
 - 任何功能设计、代码实现前，必须对齐文档；不能自行新增文档中没有定义的功能；如果需求冲突 / 模糊，优先提问确认，不要自行假设。你可以查看相关文档，他们的目录记录在“文档地图”中。
+- 文档篇幅要求在能理解的基础上做精简：保留决策、契约、坑点与验证结论等关键信息，不堆砌过程性描述。
 
 3. 代码质量
 - 代码需要保证高内聚，低耦合。
 - 需要有良好的可读性，特别注意一些涉及到数学或者整体架构的地方，你应该用注释标注。对于较简单的部分则可以不用注释而是通过代码本身告知意图，例如变量名通俗易懂。
 - 提供测试验证方法
+4. 测试与联调强度
+- 测试聚焦主功能冒烟：验证核心路径可用即可，不追求边界用例全覆盖。
+- 控制测试与联调的时间投入，不在这上面花过多精力；边缘情况以记录遗留项的方式处理。
 
 ## 禁止行为
 - 禁止输出大段文本（超过1000字）除非征得同意

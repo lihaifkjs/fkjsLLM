@@ -14,17 +14,13 @@
   get_message(message_id) -> Message          # 不存在抛 MESSAGE_NOT_FOUND
   get_setting(key) -> str | None              # value 为 JSON 字符串
   set_setting(key, value)
-  # M6 参数实验场（experiments / experiment_runs 两表，与会话数据隔离）
-  create_experiment(prompt, system_prompt, param_sets) -> Experiment
-                                            # 连 runs 一起建（status=pending）
-  get_experiment(experiment_id) -> Experiment
-                                            # 不存在抛 EXPERIMENT_NOT_FOUND
-  list_experiments() -> list[Experiment]    # 按 id 倒序（新的在前）
-  delete_experiment(experiment_id)          # 级联删 runs
-  get_runs(experiment_id) -> list[ExperimentRun]   # 按 seq 升序
-  get_run(experiment_id, run_id) -> ExperimentRun  # 不存在/不属于抛 RUN_NOT_FOUND
-  start_run(run_id)                         # 置 running 并清空 error
-  finish_run(run_id, result: RunResult)     # 回填状态/内容/观测字段/finished_at
+  # M6.5 摘要压缩（compressions 表，兼任压缩历史与会话当前生效摘要缓存）
+  add_compression(record: CompressionInput) -> Compression
+  get_latest_compression(session_id) -> Compression | None  # 无记录返回 None
+  get_compression(compression_id) -> Compression
+                                            # 不存在抛 COMPRESSION_NOT_FOUND
+  get_compression_by_trigger(session_id, trigger_message_id)
+      -> Compression | None                 # 该消息是否触发过压缩（调用链用）
 """
 from dataclasses import dataclass
 
@@ -58,63 +54,6 @@ class MessageObservability:
 
 
 @dataclass
-class Experiment:
-    """一次参数对比实验（M6）：prompt + 创建时的全局 system prompt 快照。"""
-    id: int
-    prompt: str
-    system_prompt: str
-    created_at: float
-
-
-@dataclass
-class ExperimentRun:
-    """实验中的一组参数与生成结果；观测列口径同 messages 表（M5）。
-
-    params 为 JSON 字符串（temperature/top_p/top_k/max_tokens 四项）；
-    error 为 {code, message} 的 JSON 字符串，仅 status=error 时有值。
-    """
-    id: int
-    experiment_id: int
-    seq: int
-    params: str
-    status: str  # pending / running / done / stopped / error
-    content: str
-    error: str | None = None
-    created_at: float = 0.0
-    finished_at: float | None = None
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    prompt_eval_tokens: int | None = None
-    prompt_text: str | None = None
-    prompt_messages: str | None = None
-    prompt_seg_tokens: str | None = None
-    ttft_ms: float | None = None
-    prefill_ms: float | None = None
-    decode_ms: float | None = None
-
-
-@dataclass
-class RunResult:
-    """finish_run 的回填载荷：终态 + 部分内容 + 观测字段（全部可空）。
-
-    对齐 chat 的 MessageObservability 汇合语义——正常/stop/异常三路径
-    都经 finish_run 落库，缺省 None 表示该字段未产出。
-    """
-    status: str  # done / stopped / error
-    content: str = ""
-    error: str | None = None  # {code, message} JSON 字符串
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    prompt_eval_tokens: int | None = None
-    prompt_text: str | None = None
-    prompt_messages: str | None = None
-    prompt_seg_tokens: str | None = None
-    ttft_ms: float | None = None
-    prefill_ms: float | None = None
-    decode_ms: float | None = None
-
-
-@dataclass
 class Message:
     id: int
     session_id: int
@@ -132,3 +71,48 @@ class Message:
     ttft_ms: float | None = None
     prefill_ms: float | None = None
     decode_ms: float | None = None
+
+
+@dataclass
+class CompressionInput:
+    """一次摘要压缩的入库载荷（M6.5）：压缩输入 + 产出 + 调用观测。
+
+    prev_summary 为增量追加的既有摘要（首次为空串）；
+    source_messages 为本次新纳入压缩的消息 JSON 字符串 [{role, content}]；
+    source_prompt 为压缩调用的完整渲染 prompt 文本。
+    """
+    session_id: int
+    trigger_message_id: int  # 触发本次压缩的 assistant 占位消息 id
+    prev_summary: str
+    source_messages: str
+    source_prompt: str
+    summary: str
+    covered_upto: int  # 摘要覆盖到的最大 message id（增量游标，单调不减）
+    source_tokens: int | None = None
+    summary_tokens: int | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    ttft_ms: float | None = None
+    prefill_ms: float | None = None
+    decode_ms: float | None = None
+
+
+@dataclass
+class Compression:
+    """一条压缩记录（M6.5）；会话当前生效摘要 = 该 session id 最大的一条。"""
+    id: int
+    session_id: int
+    trigger_message_id: int
+    prev_summary: str
+    source_messages: str
+    source_prompt: str
+    summary: str
+    covered_upto: int
+    source_tokens: int | None
+    summary_tokens: int | None
+    input_tokens: int | None
+    output_tokens: int | None
+    ttft_ms: float | None
+    prefill_ms: float | None
+    decode_ms: float | None
+    created_at: float
