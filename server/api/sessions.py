@@ -20,18 +20,22 @@ class CreateRequest(BaseModel):
     title: str | None = None
 
 
-class RenameRequest(BaseModel):
-    title: str
+class UpdateRequest(BaseModel):
+    """部分更新：title / rag_enabled 至少给一个。"""
+    title: str | None = None
+    rag_enabled: bool | None = None
 
 
 def _session_dict(s) -> dict:
     return {"id": s.id, "title": s.title,
-            "created_at": s.created_at, "updated_at": s.updated_at}
+            "created_at": s.created_at, "updated_at": s.updated_at,
+            "rag_enabled": bool(s.rag_enabled)}
 
 
 @router.get("")
 def list_sessions():
-    return [{"id": s.id, "title": s.title, "updated_at": s.updated_at}
+    return [{"id": s.id, "title": s.title, "updated_at": s.updated_at,
+             "rag_enabled": bool(s.rag_enabled)}
             for s in session_store.list_sessions()]
 
 
@@ -87,6 +91,19 @@ def _compression_payload(session_id: int, message_id: int) -> dict | None:
     return None
 
 
+def _retrieval_payload(session_id: int, message_id: int) -> dict | None:
+    """调用链（M7）：会话启用检索且本轮有落库 → 完整记录（含无命中
+    hits: []）；未启用 / 无记录（开关后开的老消息）→ None。"""
+    if not session_store.get_session(session_id).rag_enabled:
+        return None
+    r = session_store.get_retrieval_by_trigger(session_id, message_id)
+    if r is None:
+        return None
+    return {"query": r.query, "hits": json.loads(r.hits),
+            "injected_tokens": r.injected_tokens,
+            "latency_ms": r.latency_ms}
+
+
 def _compression_dict(c: Compression, triggered: bool) -> dict:
     return {
         "triggered": triggered,
@@ -136,16 +153,23 @@ def get_observability(session_id: int, message_id: int):
         "prompt_text": m.prompt_text,
         "prompt_messages": _loads(m.prompt_messages),
         "compression": _compression_payload(session_id, message_id),
+        "retrieval": _retrieval_payload(session_id, message_id),
     }
 
 
 @router.patch("/{session_id}")
-def rename_session(session_id: int, req: RenameRequest):
-    if not req.title.strip():
-        raise HTTPException(400, {"code": "EMPTY_TITLE",
-                                  "message": "标题不能为空"})
-    return _session_dict(
-        session_store.rename_session(session_id, req.title.strip()))
+def update_session(session_id: int, req: UpdateRequest):
+    if req.title is None and req.rag_enabled is None:
+        raise HTTPException(400, {"code": "EMPTY_UPDATE",
+                                  "message": "没有需要更新的字段"})
+    if req.title is not None:
+        if not req.title.strip():
+            raise HTTPException(400, {"code": "EMPTY_TITLE",
+                                      "message": "标题不能为空"})
+        session_store.rename_session(session_id, req.title.strip())
+    if req.rag_enabled is not None:
+        session_store.set_rag_enabled(session_id, req.rag_enabled)
+    return _session_dict(session_store.get_session(session_id))
 
 
 @router.delete("/{session_id}")

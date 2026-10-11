@@ -23,16 +23,24 @@ SUMMARY_USER_TMPL = (
 SUMMARY_PREFIX = "以下是此前对话的摘要（细节可能有损）：\n"
 SUMMARY_MAX_CHARS = 400
 
+# RAG 检索结果注入主上下文时的段前缀（独立 system 段，M7 决策 E）
+RAG_PREFIX = "以下是知识库中与当前问题相关的内容（供参考）：\n"
+
 _THINK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 
 
 def fit_window(system_prompt: str, history: list[dict], budget: int,
-               count_tokens: Callable[[str], int]) -> list[dict]:
-    """返回拼好的完整上下文（system → 裁剪后的历史）。
+               count_tokens: Callable[[str], int],
+               extra_system: list[str] | None = None) -> list[dict]:
+    """返回拼好的完整上下文（system → 固定附加段 → 裁剪后的历史）。
 
+    extra_system：固定保留、不参与截断的附加 system 段（M7 RAG 注入段），
+    位置在 system prompt 之后，token 计入 budget。
     count_tokens 由 model_manager 提供——tokenize 必须用模型实例本身。
     """
-    sys_tokens = count_tokens(system_prompt) if system_prompt else 0
+    extra_system = extra_system or []
+    sys_tokens = (count_tokens(system_prompt) if system_prompt else 0) \
+        + sum(count_tokens(s) for s in extra_system)
     counts = [count_tokens(m["content"]) for m in history]
 
     start = 0
@@ -45,8 +53,28 @@ def fit_window(system_prompt: str, history: list[dict], budget: int,
     prompt = []
     if system_prompt:
         prompt.append({"role": "system", "content": system_prompt})
+    prompt.extend({"role": "system", "content": s} for s in extra_system)
     prompt.extend(history[start:])
     return prompt
+
+
+def render_rag_segment(hits: list[dict], max_tokens: int,
+                       count_tokens: Callable[[str], int]) -> str | None:
+    """检索命中渲染为注入段（M7）：前缀 + 各片段来源标注。
+
+    hits 须已按分数降序；从高到低累加，超 max_tokens 丢弃后续片段；
+    一个都放不下返回 None（调用方按无命中处理）。
+    """
+    parts: list[str] = []
+    for hit in hits:
+        candidate = RAG_PREFIX + "\n\n".join(
+            parts + [f"[文档: {hit['filename']}]\n{hit['content']}"])
+        if count_tokens(candidate) > max_tokens:
+            break
+        parts.append(f"[文档: {hit['filename']}]\n{hit['content']}")
+    if not parts:
+        return None
+    return RAG_PREFIX + "\n\n".join(parts)
 
 
 def split_overflow(roles: list[str], keep_rounds: int) -> int:

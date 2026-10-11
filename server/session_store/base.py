@@ -7,6 +7,7 @@
   get_session(session_id) -> Session          # 不存在抛 SESSION_NOT_FOUND
   list_sessions() -> list[Session]            # 按 updated_at 倒序
   rename_session(session_id, title) -> Session
+  set_rag_enabled(session_id, enabled) -> Session  # M7 会话级检索开关
   delete_session(session_id)                  # 级联删消息
   add_message(session_id, role, content) -> Message
   update_message(message_id, content, obs: MessageObservability)
@@ -21,6 +22,16 @@
                                             # 不存在抛 COMPRESSION_NOT_FOUND
   get_compression_by_trigger(session_id, trigger_message_id)
       -> Compression | None                 # 该消息是否触发过压缩（调用链用）
+  # M7 RAG 知识库（documents/chunks/retrievals 三表）
+  add_document(filename, content, char_count, chunk_count) -> Document
+  get_document(document_id) -> Document     # 不存在抛 DOCUMENT_NOT_FOUND
+  list_documents() -> list[Document]        # 按 id 倒序（最新上传在前）
+  delete_document(document_id)              # 级联删 chunks；不动 retrievals 快照
+  add_chunks(document_id, items)            # items: [(seq, content, embedding_blob)]
+  get_all_chunks() -> list[Chunk]           # 检索全表扫描用
+  add_retrieval(record: RetrievalInput) -> Retrieval
+  get_retrieval_by_trigger(session_id, trigger_message_id)
+      -> Retrieval | None                   # 该消息触发的那次检索（调用链用）
 """
 from dataclasses import dataclass
 
@@ -31,6 +42,7 @@ class Session:
     title: str
     created_at: float
     updated_at: float
+    rag_enabled: int = 0  # M7：会话级知识库检索开关（0/1）
 
 
 @dataclass
@@ -115,4 +127,54 @@ class Compression:
     ttft_ms: float | None
     prefill_ms: float | None
     decode_ms: float | None
+    created_at: float
+
+
+@dataclass
+class Document:
+    """知识库文档（M7）：原文整体落库，全局文档池、不属于任何会话。"""
+    id: int
+    filename: str
+    content: str
+    char_count: int
+    chunk_count: int
+    created_at: float
+
+
+@dataclass
+class Chunk:
+    """文档切块（M7）：embedding 为 float32 小端字节流（dim=512）。"""
+    id: int
+    document_id: int
+    seq: int  # 文档内顺序
+    content: str
+    char_count: int
+    embedding: bytes
+    created_at: float
+
+
+@dataclass
+class RetrievalInput:
+    """一次检索的入库载荷（M7）。
+
+    hits 为命中片段快照 JSON 字符串 [{chunk_id, document_id, filename,
+    score, content}]——不回联 chunks，文档删除后历史调用链仍可读。
+    """
+    session_id: int
+    trigger_message_id: int  # 本轮 assistant 占位消息 id
+    query: str
+    hits: str
+    injected_tokens: int | None = None
+    latency_ms: float | None = None
+
+
+@dataclass
+class Retrieval:
+    id: int
+    session_id: int
+    trigger_message_id: int
+    query: str
+    hits: str
+    injected_tokens: int | None
+    latency_ms: float | None
     created_at: float

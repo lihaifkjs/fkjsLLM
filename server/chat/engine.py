@@ -9,13 +9,14 @@ import threading
 from dataclasses import dataclass, fields
 from typing import Iterator
 
-from chat.context import (SUMMARY_PREFIX, fit_window, render_summary_request,
-                          split_overflow, strip_think)
+from chat.context import (SUMMARY_PREFIX, fit_window, render_rag_segment,
+                          render_summary_request, split_overflow, strip_think)
 from config import SamplingParams, config
 from model_manager.manager import GenerateResult, ServiceError, model_manager
 from params.presets import snapshot as params_snapshot
+from rag.retriever import search as rag_search
 from session_store.base import (Compression, CompressionInput, Message,
-                                MessageObservability)
+                                MessageObservability, RetrievalInput)
 from session_store.sqlite_store import session_store
 
 DEFAULT_TITLE = "新会话"
@@ -77,40 +78,83 @@ class ChatEngine:
     def _build_prompt(self, session_id: int,
                       exclude_message_id: int
                       ) -> tuple[list[dict], SamplingParams, str]:
-        """拼上下文（按 context_strategy 分流滑窗/摘要）；返回生效参数与快照。
+        """拼上下文（RAG 检索段 → 按 context_strategy 分流滑窗/摘要）；
+        返回生效参数与快照。
 
+        RAG 检索（M7）在策略分流之前执行，与两策略正交：注入段是独立
+        system 消息，位于 system prompt 之后、摘要段/历史之前，不参与
+        滑窗/压缩截断但计入 budget。trigger_message_id 即本轮 assistant
+        占位消息 id（chat() 先插占位再拼上下文，与压缩同窗口）。
         参数每次生成前从 params 模块读取——改参数立即生效，不重载模型。
         """
         msgs = [m for m in session_store.get_messages(session_id)
                 if m.id != exclude_message_id]
+        rag_segment = self._retrieve_rag(session_id, msgs,
+                                         exclude_message_id)
         snap = params_snapshot()
         params = SamplingParams(
             **{f.name: snap[f.name] for f in fields(SamplingParams)})
         budget = config.n_ctx - params.max_tokens
         if params.context_strategy == "summary":
             prompt = self._build_summary_context(
-                session_id, msgs, params, budget, exclude_message_id)
+                session_id, msgs, params, budget, exclude_message_id,
+                rag_segment)
             if prompt is not None:
                 return prompt, params, json.dumps(snap, ensure_ascii=False)
         history = [{"role": m.role, "content": m.content} for m in msgs]
         prompt = fit_window(params.system_prompt, history,
                             budget=budget,
-                            count_tokens=model_manager.count_tokens)
+                            count_tokens=model_manager.count_tokens,
+                            extra_system=[rag_segment] if rag_segment else None)
         return prompt, params, json.dumps(snap, ensure_ascii=False)
+
+    # ---------- 知识库检索（M7） ----------
+
+    def _retrieve_rag(self, session_id: int, msgs: list[Message],
+                      trigger_message_id: int) -> str | None:
+        """用当前 user 消息检索知识库并落库 retrievals；返回注入段文本。
+
+        会话未开开关 / 无当前 user 消息 → None（不检索不落库）；
+        检索/渲染/落库任何异常 → 降级不注入不落库，对话继续（决策 I）。
+        """
+        try:
+            if not session_store.get_session(session_id).rag_enabled:
+                return None
+            if not msgs or msgs[-1].role != "user":
+                return None
+            query = msgs[-1].content
+            result = rag_search(query)
+            segment = render_rag_segment(
+                result.hits, config.rag_max_inject_tokens,
+                model_manager.count_tokens) if result.hits else None
+            session_store.add_retrieval(RetrievalInput(
+                session_id=session_id,
+                trigger_message_id=trigger_message_id,
+                query=query,
+                hits=json.dumps(result.hits, ensure_ascii=False),
+                injected_tokens=model_manager.count_tokens(segment)
+                if segment else 0,
+                latency_ms=result.latency_ms))
+            return segment
+        except Exception:
+            return None  # 决策 I：降级不阻断对话
 
     # ---------- 摘要压缩（M6.5） ----------
 
     def _build_summary_context(
             self, session_id: int, msgs: list[Message],
             params: SamplingParams, budget: int,
-            trigger_message_id: int) -> list[dict] | None:
+            trigger_message_id: int,
+            rag_segment: str | None = None) -> list[dict] | None:
         """摘要策略拼上下文；返回 None 表示无需处理或压缩失败（回退滑窗）。
 
-        最终上下文 = system prompt + 摘要段 + 最近 N 轮原文（决策 E）；
-        增量追加：只压缩 id > covered_upto 的新溢出消息（决策 B）。
+        最终上下文 = system prompt + RAG 注入段（若有）+ 摘要段 + 最近 N 轮
+        原文（决策 E）；增量追加：只压缩 id > covered_upto 的新溢出消息
+        （决策 B）。RAG 注入段计入 budget（挤压历史属预期，M7 决策 E）。
         """
         count = model_manager.count_tokens
         total = (count(params.system_prompt) if params.system_prompt else 0) \
+            + (count(rag_segment) if rag_segment else 0) \
             + sum(count(m.content) for m in msgs)
         if total <= budget:
             return None  # 未超限：不动作
@@ -138,15 +182,20 @@ class ChatEngine:
         summary_block = SUMMARY_PREFIX + summary
         kept_dicts = [{"role": m.role, "content": m.content} for m in kept]
         if count(params.system_prompt + summary_block) \
+                + (count(rag_segment) if rag_segment else 0) \
                 + sum(count(m.content) for m in kept) > budget:
             sys_text = "\n\n".join(
                 filter(None, [params.system_prompt, summary_block]))
             return fit_window(sys_text, kept_dicts, budget=budget,
-                              count_tokens=count)
+                              count_tokens=count,
+                              extra_system=[rag_segment] if rag_segment
+                              else None)
 
         prompt = []
         if params.system_prompt:
             prompt.append({"role": "system", "content": params.system_prompt})
+        if rag_segment:
+            prompt.append({"role": "system", "content": rag_segment})
         prompt.append({"role": "system", "content": summary_block})
         prompt.extend(kept_dicts)
         return prompt

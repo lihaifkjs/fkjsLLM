@@ -42,6 +42,15 @@ class Config:
     summary_keep_rounds: int = 4    # 摘要之外保留的最近对话轮数 N
     summary_max_tokens: int = 512   # 压缩调用的输出上限（含 think 块余量）
     summary_temperature: float = 0.2
+    # M7 RAG 知识库常量（批次 0 spike 定值，见 spikes/m7_embedding_spike.py）
+    rag_chunk_size: int = 500        # 切块窗口（字）
+    rag_chunk_overlap: int = 50      # 切块重叠（字）
+    rag_top_k: int = 3
+    # 域外 query 最高 0.32 / 域内最低真实命中 0.4463 → 有效区间 [0.32, 0.44]
+    rag_score_threshold: float = 0.40
+    rag_max_inject_tokens: int = 512  # 注入段 token 上限
+    rag_upload_max_bytes: int = 262144  # 256KB
+    rag_query_prefix: str = "为这个句子生成表示以用于检索相关文章："  # bge 检索指令前缀
 
 
 config = Config()
