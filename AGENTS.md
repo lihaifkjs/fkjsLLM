@@ -9,7 +9,7 @@
 - [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优）。
+- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）/ 手动压缩端点（批次4）。`LOG_PROMPT=0` 关闭终端 prompt 拦截打印。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优）。
 - web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识；默认 mock 接口层，启动 `cd web && npm run dev`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
