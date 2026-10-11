@@ -34,6 +34,9 @@ class Config:
     auth_enabled: bool = False  # PRD 3.6 占位，一期不实现
     db_path: str = os.getenv(
         "DB_PATH", str(PROJECT_ROOT / "server" / "data" / "app.db"))
+    # 调试：在 uvicorn 终端打印每次生成实际送入模型的 prompt 原文（拦截库内部
+    # _create_completion，验证 think 剥离等模板行为用）；LOG_PROMPT=0 关闭
+    log_prompt: bool = os.getenv("LOG_PROMPT", "1") == "1"
     sampling: SamplingParams = field(default_factory=SamplingParams)
     # M6.5 摘要压缩常量（spike 实测定值，见 spikes/summary_compression_spike.py）
     summary_keep_rounds: int = 4    # 摘要之外保留的最近对话轮数 N

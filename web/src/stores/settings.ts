@@ -2,9 +2,10 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api, type InferenceParams } from '../api'
+import { useModelStore } from './model'
 
-// 模型上下文窗口：后端暂无查询接口，常量须与 server/config.py 的 n_ctx 保持一致
-export const MODEL_N_CTX = 8192
+// n_ctx 兜底值：真实值由后端 GET /api/model/status 下发（对齐 server/config.py）
+const DEFAULT_N_CTX = 8192
 
 const DEFAULTS: InferenceParams = {
   temperature: 0.7,
@@ -21,7 +22,11 @@ export const useSettingsStore = defineStore('settings', () => {
   const params = ref<InferenceParams>({ ...DEFAULTS })
 
   // 上下文可用预算：总窗口减去本轮最大输出（对齐后端滑窗 budget，server/chat/engine.py）
-  const contextBudget = computed(() => MODEL_N_CTX - params.value.max_tokens)
+  // n_ctx 取模型状态轮询下发的值（5s 周期），未拿到时用兜底值
+  const modelStore = useModelStore()
+  const contextBudget = computed(
+    () => (modelStore.status.n_ctx ?? DEFAULT_N_CTX) - params.value.max_tokens,
+  )
 
   async function load() {
     params.value = await api.getParams()

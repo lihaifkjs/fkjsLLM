@@ -33,6 +33,32 @@ class ServiceError(Exception):
         self.message = message
 
 
+def _wrap_prompt_logging(llm: Llama):
+    """拦截库内部 create_completion/_create_completion，终端打印实际输入。
+
+    chat handler 会先把渲染好的 prompt 自己 tokenize（llama_chat_format.py
+    :658），所以这里收到的 prompt 通常是 token 列表，需 detokenize 还原；
+    聊天与压缩调用同实例，都会被记录。
+    """
+    def _to_text(prompt) -> str:
+        if isinstance(prompt, str):
+            return prompt
+        # special=True：保留 <|im_start|> 等特殊 token，还原完整模板结构
+        return llm.detokenize(prompt, special=True).decode("utf-8", errors="replace")
+
+    for name in ("create_completion", "_create_completion"):
+        original = getattr(llm, name)
+
+        def logged(prompt, *args, _orig=original, _name=name, **kwargs):
+            text = _to_text(prompt)
+            print(f"\n===== PROMPT[{_name}] ({len(text)} chars) =====\n"
+                  f"{text}\n===== PROMPT end =====\n", flush=True)
+            return _orig(prompt, *args, **kwargs)
+
+        setattr(llm, name, logged)
+    print("[prompt-log] wrapper installed", flush=True)
+
+
 @dataclass
 class GenerateResult:
     """generate() 结束时回填的元信息（M5：usage 精确值 + 性能计时）。
@@ -113,6 +139,8 @@ class ModelManager:
         except Exception as e:
             self._set_state(ModelState.ERROR, str(e))
             return
+        if config.log_prompt:
+            _wrap_prompt_logging(llm)
         with self._lock:
             self._llm = llm
             self._state = ModelState.LOADED
