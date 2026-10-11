@@ -15,7 +15,7 @@ import { useIsMobile } from '../composables/useIsMobile'
 import { useModelStore } from '../stores/model'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
-import type { ApiError, ChatMessage } from '../api'
+import { api, type ApiError, type ChatMessage } from '../api'
 
 // 上下文占用达到该比例时提示「上下文将满」（PRD 3.4 轻量版）
 const CTX_WARN_RATIO = 0.8
@@ -66,6 +66,23 @@ function openDebug(message: ChatMessage) {
   debugVisible.value = true
 }
 
+// 手动压缩全部历史（批次4）：成功后刷新覆盖游标，被覆盖消息即时出现有损标识
+const compressing = ref(false)
+
+async function compressNow() {
+  if (sessionStore.sessionId === null) return
+  compressing.value = true
+  try {
+    await api.compressSession(sessionStore.sessionId)
+    await sessionStore.refreshCoverage()
+    ElMessage.success('压缩完成，历史已纳入摘要')
+  } catch (e) {
+    ElMessage.error((e as ApiError).message ?? '压缩失败')
+  } finally {
+    compressing.value = false
+  }
+}
+
 onMounted(async () => {
   modelStore.startPolling()
   try {
@@ -94,6 +111,14 @@ onBeforeUnmount(() => modelStore.stopPolling())
       />
       <span class="title">{{ sessionStore.title }}</span>
       <div class="header-right">
+        <el-button
+          size="small"
+          :loading="compressing"
+          :disabled="streaming || sessionStore.sessionId === null"
+          @click="compressNow"
+        >
+          立即压缩
+        </el-button>
         <el-button size="small" @click="paramsVisible = true">参数</el-button>
         <ModelStatusBar />
       </div>

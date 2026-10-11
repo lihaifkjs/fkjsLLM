@@ -25,8 +25,8 @@
 - ~~[后端m6实现](docs/后端m6实现.md)~~（已废弃）：M6 后端实现说明，仅作历史存档。
 - ~~[前端m6实现](docs/前端m6实现.md)~~（已废弃）：M6 前端实现说明，仅作历史存档。
 - [M6.5开发计划](docs/M6.5开发计划.md)：M6.5 上下文摘要压缩开发计划——compressions 表（user_version 3）/ 增量摘要策略 / 调用链标签页填实 / 有损标识，含决策记录（A–G）与风险坑点。
-- [后端m6.5实现](docs/后端m6.5实现.md)：M6.5 后端实现说明——compressions 存储/增量游标/context_strategy 参数/摘要编排双兜底/observability compression 三态字段，含 /no_think 坑点与老存档字段回退。
-- [前端m6.5实现](docs/前端m6.5实现.md)：M6.5 前端实现说明——TracePane 三态展示/策略 el-select/有损标识与 refreshCoverage/mock 压缩模拟，含 mock 浏览器实测记录。
+- [后端m6.5实现](docs/后端m6.5实现.md)：M6.5 后端实现说明——compressions 存储/增量游标/context_strategy 参数/摘要编排双兜底/observability compression 三态字段，含 /no_think 坑点与老存档字段回退；批次4 手动压缩（POST /sessions/{id}/compress，trigger_message_id=0 哨兵，summary_covered_upto 改策略无关下发）。
+- [前端m6.5实现](docs/前端m6.5实现.md)：M6.5 前端实现说明——TracePane 三态展示/策略 el-select/有损标识与 refreshCoverage/mock 压缩模拟，含 mock 浏览器实测记录；批次4 标题栏「立即压缩」按钮 + mock 最小桩。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。

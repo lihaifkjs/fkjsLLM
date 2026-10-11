@@ -85,8 +85,8 @@ export interface ChatMessage {
 }
 
 // GET /sessions/{sid}/messages 出参（M6.5 起包一层）：
-// summary_covered_upto 为当前生效摘要覆盖到的最大消息 id（细节已丢失）；
-// 滑窗策略或无摘要时为 null
+// summary_covered_upto 为最新压缩记录覆盖到的最大消息 id（细节已丢失）；
+// 存在压缩记录即返回（与当前策略无关），无摘要时为 null
 export interface SessionMessages {
   messages: ChatMessage[]
   summary_covered_upto: number | null
@@ -114,6 +114,8 @@ export interface ModelStatus {
   state: ModelState
   vram_used_mb: number | null
   error: string | null
+  // 仅 GET /api/model/status 返回（load/unload 响应不含），前端算上下文预算用
+  n_ctx?: number
 }
 
 // ---------- 观测数据（M5，docs/M5开发计划.md §4.2） ----------
@@ -189,6 +191,8 @@ export interface LlmApi {
   renameSession: (sessionId: number, title: string) => Promise<Session>
   deleteSession: (sessionId: number) => Promise<void>
   getObservability: (sessionId: number, messageId: number) => Promise<Observability>
+  // 手动压缩全部历史（批次4）：返回本次压缩记录（triggered: true 完整形状）
+  compressSession: (sessionId: number) => Promise<CompressionRecord>
   getParams: () => Promise<InferenceParams>
   // 部分字段补丁（技术方案 §3.3）：显式字段优先于 preset；preset 仅在精确/平衡/创意三选一
   // 时传入，勿传 'custom'（后端视为未知预设，400 INVALID_PARAMS）

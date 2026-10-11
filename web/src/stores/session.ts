@@ -13,7 +13,7 @@ export const useSessionStore = defineStore('session', () => {
   const sessionId = ref<number | null>(null)
   const title = ref(DEFAULT_TITLE)
   const messages = ref<ChatMessage[]>([])
-  // M6.5：当前会话生效摘要覆盖到的最大消息 id（滑窗策略/无摘要为 null）
+  // M6.5：当前会话最新压缩记录覆盖到的最大消息 id（无摘要为 null）
   const summaryCoveredUpto = ref<number | null>(null)
 
   function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null) {

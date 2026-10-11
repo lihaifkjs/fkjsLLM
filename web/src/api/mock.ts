@@ -172,6 +172,7 @@ const status = (): ModelStatus => ({
   state: modelState,
   vram_used_mb: modelState === 'loaded' ? 10500 : null,
   error: modelError,
+  n_ctx: MODEL_N_CTX,
 })
 
 // 非法迁移对齐契约：409 + { code, message }；mock 里以 reject ApiError 表示
@@ -534,11 +535,49 @@ export const api: LlmApi = {
   getSessionMessages: async (sessionId) => {
     const session = sessions.get(sessionId)
     if (!session) throw sessionNotFound(sessionId)
-    // M6.5：覆盖游标只在摘要策略下下发（切回滑窗标识即消失，对齐后端）
+    // 批次4：存在压缩记录即下发游标（与当前策略无关，滑窗下也显示有损标识）
     return {
       messages: [...session.messages],
-      summary_covered_upto:
-        paramValues.context_strategy === 'summary' ? session.coveredUpto : null,
+      summary_covered_upto: session.coveredUpto,
+    }
+  },
+  // 手动压缩（批次4）最小桩：写死一条假记录，covered_upto 推到最新消息 id
+  compressSession: async (sessionId) => {
+    const session = sessions.get(sessionId)
+    if (!session) throw sessionNotFound(sessionId)
+    const last = session.messages.at(-1)
+    if (!last) throw { code: 'EMPTY_SESSION', message: '会话没有消息，无可压缩历史' } satisfies ApiError
+    const prevRecord = session.compressions.at(-1)
+    const record: StoredCompression = {
+      id: nextCompressionId++,
+      triggerMessageId: 0, // 手动压缩无对应触发消息
+      prevSummary: prevRecord?.summary ?? '',
+      sourceMessages: [],
+      sourcePrompt: '',
+      summary: `手动压缩全部历史共 ${session.messages.length} 条（mock 摘要）`,
+      coveredUpto: last.id,
+      sourceTokens: 0,
+      summaryTokens: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      timing: { ttft_ms: 0, prefill_ms: 0, decode_ms: 0 },
+    }
+    session.compressions.push(record)
+    session.coveredUpto = last.id
+    persistSessions()
+    return {
+      triggered: true as const,
+      id: record.id,
+      prev_summary: record.prevSummary,
+      source_messages: record.sourceMessages,
+      source_prompt: record.sourcePrompt,
+      summary: record.summary,
+      covered_upto: record.coveredUpto,
+      source_tokens: record.sourceTokens,
+      summary_tokens: record.summaryTokens,
+      input_tokens: record.inputTokens,
+      output_tokens: record.outputTokens,
+      timing: record.timing,
     }
   },
   getObservability: async (sessionId, messageId) => {

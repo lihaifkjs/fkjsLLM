@@ -82,7 +82,7 @@ class CompressionInput:
     source_prompt 为压缩调用的完整渲染 prompt 文本。
     """
     session_id: int
-    trigger_message_id: int  # 触发本次压缩的 assistant 占位消息 id
+    trigger_message_id: int  # 触发压缩的 assistant 占位消息 id；0 = 手动压缩（无对应消息）
     prev_summary: str
     source_messages: str
     source_prompt: str

@@ -6,6 +6,7 @@ import type {
   ChatSseEvent,
   ChatStreamCallbacks,
   ChatStreamHandle,
+  CompressionRecord,
   InferenceParams,
   LlmApi,
   ModelStatus,
@@ -68,6 +69,8 @@ export const api: LlmApi = {
   deleteSession: (sessionId) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
   getObservability: (sessionId, messageId) =>
     request<Observability>(`/sessions/${sessionId}/messages/${messageId}/observability`),
+  compressSession: (sessionId) =>
+    request<CompressionRecord>(`/sessions/${sessionId}/compress`, { method: 'POST' }),
   getParams: () => request<InferenceParams>('/params'),
   saveParams: (patch) => request<InferenceParams>('/params', jsonInit('PUT', patch)),
   getModelStatus: () => request<ModelStatus>('/model/status'),

@@ -8,8 +8,8 @@ import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from chat.engine import chat_engine
 from model_manager.manager import ServiceError
-from params.presets import get as get_params_dict
 from session_store.base import Compression
 from session_store.sqlite_store import session_store
 
@@ -43,21 +43,35 @@ def create_session(req: CreateRequest):
 
 @router.get("/{session_id}/messages")
 def get_messages(session_id: int):
-    """消息列表（M6.5 起包一层）：summary_covered_upto 为当前生效摘要
-    覆盖到的最大消息 id（id ≤ 它的消息细节已丢失）；滑窗策略或无摘要
-    时为 None——切回滑窗标识即消失，压缩记录本身保留可回切。
+    """消息列表（M6.5 起包一层）：summary_covered_upto 为该会话最新压缩
+    记录覆盖到的最大消息 id（id ≤ 它的消息细节已丢失）；存在压缩记录即
+    返回，与当前策略无关（批次4：滑窗策略下也显示有损标识）。
     """
-    covered_upto = None
-    if get_params_dict()["context_strategy"] == "summary":
-        latest = session_store.get_latest_compression(session_id)
-        if latest is not None:
-            covered_upto = latest.covered_upto
+    latest = session_store.get_latest_compression(session_id)
     return {
         "messages": [{"id": m.id, "role": m.role, "content": m.content,
                       "created_at": m.created_at}
                      for m in session_store.get_messages(session_id)],
-        "summary_covered_upto": covered_upto,
+        "summary_covered_upto": latest.covered_upto if latest else None,
     }
+
+
+@router.post("/{session_id}/compress")
+def compress_session(session_id: int):
+    """手动压缩全部历史（批次4）：成功返回本次 compressions 记录。
+
+    会话不存在 404、空会话 400（同 observability 的 HTTPException 形状）；
+    生成锁忙 / 模型未加载由 chat 层 ServiceError 走全局 handler 转 409。
+    """
+    try:
+        record = chat_engine.compress_session(session_id)
+    except ServiceError as e:
+        if e.code == "SESSION_NOT_FOUND":
+            raise HTTPException(404, {"code": e.code, "message": e.message})
+        if e.code == "EMPTY_SESSION":
+            raise HTTPException(400, {"code": e.code, "message": e.message})
+        raise
+    return _compression_dict(record, triggered=True)
 
 
 def _compression_payload(session_id: int, message_id: int) -> dict | None:

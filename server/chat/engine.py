@@ -20,6 +20,9 @@ from session_store.sqlite_store import session_store
 
 DEFAULT_TITLE = "新会话"
 TITLE_LEN = 20  # 一期标题取首条消息前 20 字（PRD 3.2 简化）
+# 手动压缩的 trigger_message_id 哨兵：无对应消息（id 从 1 自增），
+# 也不会命中调用链的 get_compression_by_trigger 查询
+MANUAL_TRIGGER_ID = 0
 
 
 @dataclass
@@ -121,8 +124,11 @@ class ChatEngine:
         new_msgs = [m for m in overflow
                     if latest is None or m.id > latest.covered_upto]
         if new_msgs:
-            summary = self._run_compression(
-                session_id, latest, new_msgs, trigger_message_id)
+            try:
+                summary = self._run_compression(
+                    session_id, latest, new_msgs, trigger_message_id)
+            except ServiceError:
+                summary = None  # 锁忙/模型未加载同样降级滑窗（决策 D 兜底）
             if summary is None:
                 return None  # 压缩失败降级：对话不中断（决策 D 兜底）
         else:
@@ -149,7 +155,11 @@ class ChatEngine:
                          latest: Compression | None,
                          new_msgs: list[Message],
                          trigger_message_id: int) -> str | None:
-        """跑一次压缩推理并落库 compressions；失败（含锁被抢）返回 None。"""
+        """跑一次压缩推理并落库 compressions；失败返回 None。
+
+        ServiceError（锁忙 GENERATION_IN_PROGRESS / 模型未加载）原样上抛，
+        由调用方决定降级（自动路径）还是报错（手动压缩）。
+        """
         prev_summary = latest.summary if latest else ""
         source = [{"role": m.role, "content": m.content} for m in new_msgs]
         request = render_summary_request(prev_summary, source)
@@ -160,6 +170,8 @@ class ChatEngine:
         try:
             summary = strip_think(
                 "".join(model_manager.generate(request, comp_params, result)))
+        except ServiceError:
+            raise
         except Exception:
             return None
         if not summary or result.stopped:
@@ -182,6 +194,30 @@ class ChatEngine:
             decode_ms=result.decode_ms,
         ))
         return summary
+
+    def compress_session(self, session_id: int) -> Compression:
+        """手动压缩指定会话全部历史（与自动压缩共用 _run_compression 路径）。
+
+        增量合并保持一致：prev_summary 取最新 compression，本次 source 为
+        id > covered_upto 的全部消息，covered_upto 推进到最新一条消息 id；
+        trigger_message_id 置 MANUAL_TRIGGER_ID 表示手动。
+        空会话抛 EMPTY_SESSION（api 层转 400）；锁忙/模型未加载的
+        ServiceError 原样上抛（409）；全部历史已覆盖时幂等返回现有记录。
+        """
+        msgs = session_store.get_messages(session_id)  # 不存在抛 SESSION_NOT_FOUND
+        if not msgs:
+            raise ServiceError("EMPTY_SESSION",
+                               f"会话 {session_id} 没有消息，无可压缩历史")
+        latest = session_store.get_latest_compression(session_id)
+        new_msgs = [m for m in msgs
+                    if latest is None or m.id > latest.covered_upto]
+        if latest is not None and not new_msgs:
+            return latest
+        summary = self._run_compression(
+            session_id, latest, new_msgs, MANUAL_TRIGGER_ID)
+        if summary is None:
+            raise ServiceError("COMPRESSION_FAILED", "压缩失败，请重试")
+        return session_store.get_latest_compression(session_id)
 
     def _wrap(self, assistant_msg: Message, tokens: Iterator[str],
               result: GenerateResult, snapshot: str) -> Iterator[str]:
