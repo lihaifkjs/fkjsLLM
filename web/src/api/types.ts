@@ -69,6 +69,8 @@ export interface SessionSummary {
   id: number
   title: string
   updated_at: number
+  // M7：会话级知识库检索开关
+  rag_enabled: boolean
 }
 
 export interface Session extends SessionSummary {
@@ -138,7 +140,6 @@ export interface PromptMessage {
 }
 
 // ---------- 摘要压缩（M6.5，docs/M6.5开发计划.md §3/§6.5） ----------
-
 // 本消息触发的那次压缩：完整记录（压缩前 prompt / 摘要 / token 对比 / 耗时）
 export interface CompressionRecord {
   triggered: true
@@ -163,6 +164,33 @@ export interface CompressionReuse {
 
 export type CompressionInfo = CompressionRecord | CompressionReuse
 
+// ---------- RAG 知识库（M7，docs/M7开发计划.md §3/§8） ----------
+
+export interface KnowledgeDocument {
+  id: number
+  filename: string
+  char_count: number
+  chunk_count: number
+  created_at: number
+}
+
+// 命中片段快照（retrievals.hits JSON）：与文档生命周期解耦，文档删除后仍可读
+export interface RetrievalHit {
+  chunk_id: number
+  document_id: number
+  filename: string
+  score: number
+  content: string
+}
+
+// 一轮检索的调用链记录；hits 可空数组（无命中）
+export interface Retrieval {
+  query: string
+  hits: RetrievalHit[]
+  injected_tokens: number | null
+  latency_ms: number | null
+}
+
 // GET /sessions/{sid}/messages/{mid}/observability 出参；
 // user 消息或 M5 前的老消息各字段为 null，pane 据此降级到帧统计
 export interface Observability {
@@ -177,6 +205,9 @@ export interface Observability {
   prompt_messages: PromptMessage[] | null
   // M6.5：压缩调用记录（触发/复用/无 三态）
   compression: CompressionInfo | null
+  // M7：知识库检索记录（会话启用检索且有落库 → 完整记录含无命中 hits:[]；
+  // 未启用 / 开关后开的老消息 → null）
+  retrieval: Retrieval | null
 }
 
 // ---------- 统一 API 形状 ----------
@@ -193,6 +224,12 @@ export interface LlmApi {
   getObservability: (sessionId: number, messageId: number) => Promise<Observability>
   // 手动压缩全部历史（批次4）：返回本次压缩记录（triggered: true 完整形状）
   compressSession: (sessionId: number) => Promise<CompressionRecord>
+  // M7：会话级知识库检索开关（PATCH 部分更新）
+  setRagEnabled: (sessionId: number, enabled: boolean) => Promise<Session>
+  // M7：知识库文档管理
+  listDocuments: () => Promise<KnowledgeDocument[]>
+  uploadDocument: (file: File) => Promise<KnowledgeDocument>
+  deleteDocument: (documentId: number) => Promise<void>
   getParams: () => Promise<InferenceParams>
   // 部分字段补丁（技术方案 §3.3）：显式字段优先于 preset；preset 仅在精确/平衡/创意三选一
   // 时传入，勿传 'custom'（后端视为未知预设，400 INVALID_PARAMS）

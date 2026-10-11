@@ -7,6 +7,7 @@ import type {
   ChatStreamCallbacks,
   ChatStreamHandle,
   InferenceParams,
+  KnowledgeDocument,
   LlmApi,
   ModelState,
   ModelStatus,
@@ -121,6 +122,8 @@ try {
       // M6.5 前的老存档归一化
       s.compressions ??= []
       s.coveredUpto ??= null
+      // M7 前的老存档归一化
+      s.rag_enabled ??= false
       for (const c of s.compressions) {
         nextCompressionId = Math.max(nextCompressionId, c.id + 1)
       }
@@ -190,6 +193,14 @@ const messageNotFound = (messageId: number): ApiError => ({
   code: 'MESSAGE_NOT_FOUND',
   message: `消息 ${messageId} 不存在`,
 })
+
+// ---------- 知识库文档（M7 最小桩：内存态，不复刻切块/检索行为） ----------
+
+let nextDocumentId = 3
+const documents: KnowledgeDocument[] = [
+  { id: 1, filename: 'sqlite_notes.md', char_count: 342, chunk_count: 1, created_at: now() - 3600 },
+  { id: 2, filename: 'llm_inference.md', char_count: 518, chunk_count: 2, created_at: now() - 600 },
+]
 
 // ---------- 参数：校验与预设匹配（对齐 server/params/presets.py） ----------
 
@@ -280,6 +291,24 @@ function buildObservability(session: StoredSession, assistantIndex: number): Obs
     },
     prompt_text: renderPromptText(promptMessages),
     prompt_messages: promptMessages,
+    // M7 最小桩：会话开了检索开关就给一条固定假命中，不复刻真实检索行为
+    retrieval: session.rag_enabled
+      ? {
+          query: current.content,
+          hits: [
+            {
+              chunk_id: 1,
+              document_id: 1,
+              filename: 'sqlite_notes.md',
+              score: 0.62,
+              content:
+                'WAL 模式（Write-Ahead Logging）允许多个读者与一个写者并发，读操作不再阻塞写操作。（mock 命中片段）',
+            },
+          ],
+          injected_tokens: 64,
+          latency_ms: 12.5,
+        }
+      : null,
     // 压缩三态：本消息触发（完整记录）/ 复用既有摘要 / 无
     compression: active
       ? active.triggerMessageId === assistant.id
@@ -314,6 +343,7 @@ function nullObservability(): Observability {
     prompt_text: null,
     prompt_messages: null,
     compression: null,
+    retrieval: null,
   }
 }
 
@@ -401,6 +431,7 @@ function ensureSession(sessionId: number | null, content: string): StoredSession
     title: content.slice(0, TITLE_LEN).trim() || DEFAULT_TITLE,
     created_at: now(),
     updated_at: now(),
+    rag_enabled: false,
     messages: [],
     compressions: [],
     coveredUpto: null,
@@ -515,7 +546,7 @@ export const api: LlmApi = {
   stopChat: async () => undefined,
   listSessions: async (): Promise<SessionSummary[]> =>
     [...sessions.values()]
-      .map(({ id, title, updated_at }) => ({ id, title, updated_at }))
+      .map(({ id, title, updated_at, rag_enabled }) => ({ id, title, updated_at, rag_enabled }))
       .sort((a, b) => b.updated_at - a.updated_at),
   createSession: async (title) => {
     const session: StoredSession = {
@@ -523,6 +554,7 @@ export const api: LlmApi = {
       title: title?.trim() || DEFAULT_TITLE,
       created_at: now(),
       updated_at: now(),
+      rag_enabled: false,
       messages: [],
       compressions: [],
       coveredUpto: null,
@@ -605,6 +637,33 @@ export const api: LlmApi = {
   deleteSession: async (sessionId) => {
     if (!sessions.delete(sessionId)) throw sessionNotFound(sessionId)
     persistSessions()
+  },
+  setRagEnabled: async (sessionId, enabled) => {
+    const session = sessions.get(sessionId)
+    if (!session) throw sessionNotFound(sessionId)
+    session.rag_enabled = enabled
+    persistSessions()
+    const { messages: _messages, ...rest } = session
+    return rest
+  },
+  listDocuments: async () => [...documents].sort((a, b) => b.id - a.id),
+  uploadDocument: async (file) => {
+    const doc: KnowledgeDocument = {
+      id: nextDocumentId++,
+      filename: file.name,
+      char_count: file.size,
+      chunk_count: 1,
+      created_at: now(),
+    }
+    documents.push(doc)
+    return doc
+  },
+  deleteDocument: async (documentId) => {
+    const index = documents.findIndex((d) => d.id === documentId)
+    if (index < 0) {
+      throw { code: 'DOCUMENT_NOT_FOUND', message: `文档 ${documentId} 不存在` } satisfies ApiError
+    }
+    documents.splice(index, 1)
   },
   getParams: async () => ({ ...paramValues, preset: matchPreset(paramValues) }),
   saveParams: async (patch) => {

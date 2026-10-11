@@ -8,6 +8,7 @@ import type {
   ChatStreamHandle,
   CompressionRecord,
   InferenceParams,
+  KnowledgeDocument,
   LlmApi,
   ModelStatus,
   Observability,
@@ -71,6 +72,19 @@ export const api: LlmApi = {
     request<Observability>(`/sessions/${sessionId}/messages/${messageId}/observability`),
   compressSession: (sessionId) =>
     request<CompressionRecord>(`/sessions/${sessionId}/compress`, { method: 'POST' }),
+  setRagEnabled: (sessionId, enabled) =>
+    request<Session>(`/sessions/${sessionId}`, jsonInit('PATCH', { rag_enabled: enabled })),
+  listDocuments: () => request<KnowledgeDocument[]>('/knowledge/documents'),
+  uploadDocument: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request<KnowledgeDocument>('/knowledge/documents', {
+      method: 'POST',
+      body: form,
+    })
+  },
+  deleteDocument: (documentId) =>
+    request<void>(`/knowledge/documents/${documentId}`, { method: 'DELETE' }),
   getParams: () => request<InferenceParams>('/params'),
   saveParams: (patch) => request<InferenceParams>('/params', jsonInit('PUT', patch)),
   getModelStatus: () => request<ModelStatus>('/model/status'),

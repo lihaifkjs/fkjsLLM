@@ -2,6 +2,7 @@
 // 对话主界面：桌面双栏（左侧会话列表），移动端单栏 + 抽屉式会话列表（M4，PRD 3.5）；
 // 右侧参数抽屉（M3），输入框上方为轻量可观测状态行（PRD 3.4）
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Menu } from '@element-plus/icons-vue'
 import ChatInput from '../components/ChatInput.vue'
@@ -24,6 +25,7 @@ const modelStore = useModelStore()
 const sessionStore = useSessionStore()
 const settingsStore = useSettingsStore()
 const { streaming, tokensPerSec, lastUsage, send, stop } = useChatStream()
+const router = useRouter()
 
 const listRef = ref<HTMLElement>()
 const debugVisible = ref(false)
@@ -69,6 +71,15 @@ function openDebug(message: ChatMessage) {
 // 手动压缩全部历史（批次4）：成功后刷新覆盖游标，被覆盖消息即时出现有损标识
 const compressing = ref(false)
 
+// M7：知识库检索开关（:model-value 单向绑定，PATCH 失败时界面自动回弹）
+async function onRagToggle(enabled: boolean) {
+  try {
+    await sessionStore.setRagEnabled(enabled)
+  } catch (e) {
+    ElMessage.error((e as ApiError).message ?? '切换知识库检索失败')
+  }
+}
+
 async function compressNow() {
   if (sessionStore.sessionId === null) return
   compressing.value = true
@@ -111,6 +122,15 @@ onBeforeUnmount(() => modelStore.stopPolling())
       />
       <span class="title">{{ sessionStore.title }}</span>
       <div class="header-right">
+        <span class="rag-switch" title="开启后每轮对话用当前提问检索知识库并注入上下文">
+          <el-switch
+            :model-value="sessionStore.ragEnabled"
+            :disabled="streaming || sessionStore.sessionId === null"
+            @change="onRagToggle"
+          />
+          <span class="rag-label">知识库检索</span>
+        </span>
+        <el-button size="small" @click="router.push('/knowledge')">知识库</el-button>
         <el-button
           size="small"
           :loading="compressing"
@@ -194,6 +214,16 @@ onBeforeUnmount(() => modelStore.stopPolling())
   align-items: center;
   gap: 16px;
   flex-shrink: 0;
+}
+.rag-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rag-label {
+  font-size: 12px;
+  color: #606266;
+  white-space: nowrap;
 }
 .title {
   flex: 1;

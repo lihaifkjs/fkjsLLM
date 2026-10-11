@@ -15,12 +15,15 @@ export const useSessionStore = defineStore('session', () => {
   const messages = ref<ChatMessage[]>([])
   // M6.5：当前会话最新压缩记录覆盖到的最大消息 id（无摘要为 null）
   const summaryCoveredUpto = ref<number | null>(null)
+  // M7：当前会话的知识库检索开关（新建会话默认关）
+  const ragEnabled = ref(false)
 
-  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null) {
+  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null, rag: boolean = false) {
     sessionId.value = id
     title.value = sessionTitle
     messages.value = msgs
     summaryCoveredUpto.value = coveredUpto
+    ragEnabled.value = rag
   }
 
   // 列表项提到最前（列表按 updated_at 倒序，最新消息的会话排第一）
@@ -47,14 +50,24 @@ export const useSessionStore = defineStore('session', () => {
       id: session.id,
       title: session.title,
       updated_at: session.updated_at,
+      rag_enabled: session.rag_enabled,
     })
-    select(session.id, session.title, [])
+    select(session.id, session.title, [], null, session.rag_enabled)
   }
 
   async function openSession(id: number) {
     const resp = await api.getSessionMessages(id)
     const summary = sessions.value.find((s) => s.id === id)
-    select(id, summary?.title ?? DEFAULT_TITLE, resp.messages, resp.summary_covered_upto)
+    select(id, summary?.title ?? DEFAULT_TITLE, resp.messages, resp.summary_covered_upto, summary?.rag_enabled ?? false)
+  }
+
+  // M7：切换当前会话的知识库检索开关，列表项同步
+  async function setRagEnabled(enabled: boolean) {
+    if (sessionId.value === null) return
+    await api.setRagEnabled(sessionId.value, enabled)
+    ragEnabled.value = enabled
+    const item = sessions.value.find((s) => s.id === sessionId.value)
+    if (item) item.rag_enabled = enabled
   }
 
   // 一轮对话结束后刷新摘要覆盖范围（本轮可能触发了压缩）；只更新游标，不动消息列表
@@ -95,10 +108,12 @@ export const useSessionStore = defineStore('session', () => {
     if (sessions.value.some((s) => s.id === meta.session_id)) {
       bumpSummary(meta.session_id, { title: meta.title, updated_at: Date.now() / 1000 })
     } else {
+      // 此前未建会话（首条消息直接开聊）：新会话检索开关默认关
       sessions.value.unshift({
         id: meta.session_id,
         title: meta.title,
         updated_at: Date.now() / 1000,
+        rag_enabled: false,
       })
     }
   }
@@ -141,10 +156,12 @@ export const useSessionStore = defineStore('session', () => {
     title,
     messages,
     summaryCoveredUpto,
+    ragEnabled,
     loadSessions,
     createSession,
     openSession,
     refreshCoverage,
+    setRagEnabled,
     rename,
     remove,
     handleSessionGone,
