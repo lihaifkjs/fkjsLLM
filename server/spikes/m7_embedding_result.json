@@ -1,0 +1,2599 @@
+{
+  "stacks": {
+    "A_llamacpp_gguf": {
+      "load_seconds": 0.07,
+      "pooling_type": 2,
+      "runs": [
+        {
+          "chunk_size": 300,
+          "query_prefix": true,
+          "n_chunks": 6,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4961,
+          "max_miss_score": 0.5201,
+          "min_margin": -0.0071,
+          "avg_doc_embed_ms": 50.3,
+          "avg_query_embed_ms": 8.3,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6441,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4849,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4187,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6441,
+              "best_miss_score": 0.4187
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7498,
+                  "doc": 0
+                },
+                {
+                  "score": 0.7223,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4711,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.7498,
+              "best_miss_score": 0.4711
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.696,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5745,
+                  "doc": 0
+                },
+                {
+                  "score": 0.441,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.696,
+              "best_miss_score": 0.441
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6105,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5559,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4627,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6105,
+              "best_miss_score": 0.4627
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6255,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4886,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3739,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6255,
+              "best_miss_score": 0.3739
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6819,
+                  "doc": 1
+                },
+                {
+                  "score": 0.6392,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4737,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6819,
+              "best_miss_score": 0.4737
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5153,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4702,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4613,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5153,
+              "best_miss_score": 0.4702
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5032,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4961,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4755,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.4961,
+              "best_miss_score": 0.5032
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5911,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5013,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3806,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5911,
+              "best_miss_score": 0.3806
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7018,
+                  "doc": 2
+                },
+                {
+                  "score": 0.6123,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5201,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7018,
+              "best_miss_score": 0.5201
+            }
+          ]
+        },
+        {
+          "chunk_size": 300,
+          "query_prefix": false,
+          "n_chunks": 6,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.5422,
+          "max_miss_score": 0.5683,
+          "min_margin": -0.0115,
+          "avg_doc_embed_ms": 37.7,
+          "avg_query_embed_ms": 6.5,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.678,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5524,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4675,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.678,
+              "best_miss_score": 0.4675
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.751,
+                  "doc": 0
+                },
+                {
+                  "score": 0.7413,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4773,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.751,
+              "best_miss_score": 0.4773
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.726,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5741,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4509,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.726,
+              "best_miss_score": 0.4509
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6494,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5676,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4676,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6494,
+              "best_miss_score": 0.4676
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6628,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5445,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4452,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6628,
+              "best_miss_score": 0.4452
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6752,
+                  "doc": 1
+                },
+                {
+                  "score": 0.6587,
+                  "doc": 1
+                },
+                {
+                  "score": 0.487,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6752,
+              "best_miss_score": 0.487
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5422,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4809,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4759,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5422,
+              "best_miss_score": 0.4809
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5683,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5567,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5153,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5567,
+              "best_miss_score": 0.5683
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6318,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5433,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4136,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6318,
+              "best_miss_score": 0.4136
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7145,
+                  "doc": 2
+                },
+                {
+                  "score": 0.635,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5214,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7145,
+              "best_miss_score": 0.5214
+            }
+          ]
+        },
+        {
+          "chunk_size": 500,
+          "query_prefix": true,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4584,
+          "max_miss_score": 0.4896,
+          "min_margin": -0.0047,
+          "avg_doc_embed_ms": 105.4,
+          "avg_query_embed_ms": 10.0,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.5931,
+                  "doc": 0
+                },
+                {
+                  "score": 0.3523,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3417,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5931,
+              "best_miss_score": 0.3523
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7547,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4518,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3964,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7547,
+              "best_miss_score": 0.4518
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6435,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4425,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3771,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6435,
+              "best_miss_score": 0.4425
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6019,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4281,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6019,
+              "best_miss_score": 0.4463
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5804,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3254,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3143,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5804,
+              "best_miss_score": 0.3254
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6914,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4555,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3886,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6914,
+              "best_miss_score": 0.4555
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.4942,
+                  "doc": 1
+                },
+                {
+                  "score": 0.458,
+                  "doc": 0
+                },
+                {
+                  "score": 0.438,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.4942,
+              "best_miss_score": 0.458
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4584,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4251,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4584,
+              "best_miss_score": 0.463
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.4702,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3295,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3062,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4702,
+              "best_miss_score": 0.3295
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6659,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4896,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4479,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6659,
+              "best_miss_score": 0.4896
+            }
+          ]
+        },
+        {
+          "chunk_size": 500,
+          "query_prefix": false,
+          "n_chunks": 3,
+          "top1_hit_rate": 1.0,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.5215,
+          "max_miss_score": 0.527,
+          "min_margin": 0.0037,
+          "avg_doc_embed_ms": 80.3,
+          "avg_query_embed_ms": 6.7,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6565,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4098,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4042,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6565,
+              "best_miss_score": 0.4098
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7754,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4793,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4177,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7754,
+              "best_miss_score": 0.4793
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6734,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4714,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4211,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6734,
+              "best_miss_score": 0.4714
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6443,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4731,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4688,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6443,
+              "best_miss_score": 0.4731
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.64,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3889,
+                  "doc": 0
+                },
+                {
+                  "score": 0.3877,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.64,
+              "best_miss_score": 0.3889
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6992,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4925,
+                  "doc": 2
+                },
+                {
+                  "score": 0.434,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6992,
+              "best_miss_score": 0.4925
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5215,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4922,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4794,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5215,
+              "best_miss_score": 0.4922
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5307,
+                  "doc": 2
+                },
+                {
+                  "score": 0.527,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5025,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5307,
+              "best_miss_score": 0.527
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5316,
+                  "doc": 2
+                },
+                {
+                  "score": 0.39,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3743,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5316,
+              "best_miss_score": 0.39
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7065,
+                  "doc": 2
+                },
+                {
+                  "score": 0.514,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4818,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.7065,
+              "best_miss_score": 0.514
+            }
+          ]
+        },
+        {
+          "chunk_size": 800,
+          "query_prefix": true,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4584,
+          "max_miss_score": 0.4896,
+          "min_margin": -0.0047,
+          "avg_doc_embed_ms": 196.3,
+          "avg_query_embed_ms": 11.0,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.5931,
+                  "doc": 0
+                },
+                {
+                  "score": 0.3523,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3417,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5931,
+              "best_miss_score": 0.3523
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7547,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4518,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3964,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7547,
+              "best_miss_score": 0.4518
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6435,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4425,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3771,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6435,
+              "best_miss_score": 0.4425
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6019,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4281,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6019,
+              "best_miss_score": 0.4463
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5804,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3254,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3143,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5804,
+              "best_miss_score": 0.3254
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6914,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4555,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3886,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6914,
+              "best_miss_score": 0.4555
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.4942,
+                  "doc": 1
+                },
+                {
+                  "score": 0.458,
+                  "doc": 0
+                },
+                {
+                  "score": 0.438,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.4942,
+              "best_miss_score": 0.458
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4584,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4251,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4584,
+              "best_miss_score": 0.463
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.4702,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3295,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3062,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4702,
+              "best_miss_score": 0.3295
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6659,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4896,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4479,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6659,
+              "best_miss_score": 0.4896
+            }
+          ]
+        },
+        {
+          "chunk_size": 800,
+          "query_prefix": false,
+          "n_chunks": 3,
+          "top1_hit_rate": 1.0,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.5215,
+          "max_miss_score": 0.527,
+          "min_margin": 0.0037,
+          "avg_doc_embed_ms": 116.6,
+          "avg_query_embed_ms": 10.2,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6565,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4098,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4042,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6565,
+              "best_miss_score": 0.4098
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7754,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4793,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4177,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7754,
+              "best_miss_score": 0.4793
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6734,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4714,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4211,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6734,
+              "best_miss_score": 0.4714
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6443,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4731,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4688,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6443,
+              "best_miss_score": 0.4731
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.64,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3889,
+                  "doc": 0
+                },
+                {
+                  "score": 0.3877,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.64,
+              "best_miss_score": 0.3889
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.6992,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4925,
+                  "doc": 2
+                },
+                {
+                  "score": 0.434,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6992,
+              "best_miss_score": 0.4925
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5215,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4922,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4794,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5215,
+              "best_miss_score": 0.4922
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5307,
+                  "doc": 2
+                },
+                {
+                  "score": 0.527,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5025,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5307,
+              "best_miss_score": 0.527
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5316,
+                  "doc": 2
+                },
+                {
+                  "score": 0.39,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3743,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5316,
+              "best_miss_score": 0.39
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7065,
+                  "doc": 2
+                },
+                {
+                  "score": 0.514,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4818,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.7065,
+              "best_miss_score": 0.514
+            }
+          ]
+        }
+      ]
+    },
+    "B_fastembed_onnx": {
+      "load_seconds": 0.06,
+      "pooling_type": "cls(onnx)",
+      "runs": [
+        {
+          "chunk_size": 300,
+          "query_prefix": true,
+          "n_chunks": 6,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4646,
+          "max_miss_score": 0.5489,
+          "min_margin": -0.0115,
+          "avg_doc_embed_ms": 10.7,
+          "avg_query_embed_ms": 2.1,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6241,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4949,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4533,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6241,
+              "best_miss_score": 0.4533
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7235,
+                  "doc": 0
+                },
+                {
+                  "score": 0.7033,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4903,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.7235,
+              "best_miss_score": 0.4903
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7192,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5714,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4306,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7192,
+              "best_miss_score": 0.4306
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.629,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5625,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4611,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.629,
+              "best_miss_score": 0.4611
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5062,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5013,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4919,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5062,
+              "best_miss_score": 0.5013
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.4761,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4646,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4495,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.4646,
+              "best_miss_score": 0.4761
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5345,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5218,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5202,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5345,
+              "best_miss_score": 0.5218
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5656,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5489,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5359,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5656,
+              "best_miss_score": 0.5489
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6004,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5139,
+                  "doc": 2
+                },
+                {
+                  "score": 0.438,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6004,
+              "best_miss_score": 0.438
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7354,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5967,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5332,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7354,
+              "best_miss_score": 0.5332
+            }
+          ]
+        },
+        {
+          "chunk_size": 300,
+          "query_prefix": false,
+          "n_chunks": 6,
+          "top1_hit_rate": 0.9,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.507,
+          "max_miss_score": 0.6004,
+          "min_margin": -0.0001,
+          "avg_doc_embed_ms": 10.1,
+          "avg_query_embed_ms": 1.1,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6714,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5648,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5114,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6714,
+              "best_miss_score": 0.5114
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7286,
+                  "doc": 0
+                },
+                {
+                  "score": 0.7212,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5098,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.7286,
+              "best_miss_score": 0.5098
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7435,
+                  "doc": 0
+                },
+                {
+                  "score": 0.58,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4521,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7435,
+              "best_miss_score": 0.4521
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6734,
+                  "doc": 0
+                },
+                {
+                  "score": 0.578,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4837,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6734,
+              "best_miss_score": 0.4837
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5645,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5644,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5456,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5644,
+              "best_miss_score": 0.5645
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.507,
+                  "doc": 1
+                },
+                {
+                  "score": 0.503,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5027,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.507,
+              "best_miss_score": 0.503
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5611,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5609,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5459,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5611,
+              "best_miss_score": 0.5609
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.634,
+                  "doc": 2
+                },
+                {
+                  "score": 0.6004,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5889,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.634,
+              "best_miss_score": 0.6004
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6456,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5639,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4792,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6456,
+              "best_miss_score": 0.4792
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7554,
+                  "doc": 2
+                },
+                {
+                  "score": 0.6255,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5419,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7554,
+              "best_miss_score": 0.5419
+            }
+          ]
+        },
+        {
+          "chunk_size": 500,
+          "query_prefix": true,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.8,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4463,
+          "max_miss_score": 0.5367,
+          "min_margin": -0.0009,
+          "avg_doc_embed_ms": 19.2,
+          "avg_query_embed_ms": 2.1,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.5747,
+                  "doc": 0
+                },
+                {
+                  "score": 0.399,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3846,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5747,
+              "best_miss_score": 0.399
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7233,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5096,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4829,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7233,
+              "best_miss_score": 0.5096
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6668,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4384,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3951,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6668,
+              "best_miss_score": 0.4384
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6195,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4678,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4526,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6195,
+              "best_miss_score": 0.4678
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.472,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4716,
+                  "doc": 1
+                },
+                {
+                  "score": 0.458,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4716,
+              "best_miss_score": 0.472
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.4463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4323,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3927,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4463,
+              "best_miss_score": 0.4323
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5268,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5259,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5204,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5259,
+              "best_miss_score": 0.5268
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5253,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5248,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4946,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5253,
+              "best_miss_score": 0.5248
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.483,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3853,
+                  "doc": 1
+                },
+                {
+                  "score": 0.311,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.483,
+              "best_miss_score": 0.3853
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6988,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5367,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4725,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6988,
+              "best_miss_score": 0.5367
+            }
+          ]
+        },
+        {
+          "chunk_size": 500,
+          "query_prefix": false,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.8,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.5077,
+          "max_miss_score": 0.6021,
+          "min_margin": -0.0053,
+          "avg_doc_embed_ms": 18.8,
+          "avg_query_embed_ms": 1.1,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6464,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4758,
+                  "doc": 1
+                },
+                {
+                  "score": 0.461,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6464,
+              "best_miss_score": 0.4758
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7508,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5493,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5142,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7508,
+              "best_miss_score": 0.5493
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7031,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4817,
+                  "doc": 1
+                },
+                {
+                  "score": 0.449,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.7031,
+              "best_miss_score": 0.4817
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6705,
+                  "doc": 0
+                },
+                {
+                  "score": 0.511,
+                  "doc": 2
+                },
+                {
+                  "score": 0.498,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6705,
+              "best_miss_score": 0.511
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5615,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5546,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5337,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5615,
+              "best_miss_score": 0.5546
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5077,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4961,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4708,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5077,
+              "best_miss_score": 0.4961
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.575,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5702,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5696,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5696,
+              "best_miss_score": 0.575
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6021,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5969,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5726,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5969,
+              "best_miss_score": 0.6021
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5484,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4562,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3851,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5484,
+              "best_miss_score": 0.4562
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7451,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5748,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5156,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.7451,
+              "best_miss_score": 0.5748
+            }
+          ]
+        },
+        {
+          "chunk_size": 800,
+          "query_prefix": true,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.8,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.4463,
+          "max_miss_score": 0.5367,
+          "min_margin": -0.0009,
+          "avg_doc_embed_ms": 18.8,
+          "avg_query_embed_ms": 2.1,
+          "queries": [
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.5747,
+                  "doc": 0
+                },
+                {
+                  "score": 0.399,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3846,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5747,
+              "best_miss_score": 0.399
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7233,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5096,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4829,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7233,
+              "best_miss_score": 0.5096
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6668,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4384,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3951,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6668,
+              "best_miss_score": 0.4384
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6195,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4678,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4526,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6195,
+              "best_miss_score": 0.4678
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.472,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4716,
+                  "doc": 1
+                },
+                {
+                  "score": 0.458,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4716,
+              "best_miss_score": 0.472
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.4463,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4323,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3927,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.4463,
+              "best_miss_score": 0.4323
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5268,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5259,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5204,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5259,
+              "best_miss_score": 0.5268
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5253,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5248,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4946,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5253,
+              "best_miss_score": 0.5248
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.483,
+                  "doc": 2
+                },
+                {
+                  "score": 0.3853,
+                  "doc": 1
+                },
+                {
+                  "score": 0.311,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.483,
+              "best_miss_score": 0.3853
+            },
+            {
+              "query": "为这个句子生成表示以用于检索相关文章：怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6988,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5367,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4725,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.6988,
+              "best_miss_score": 0.5367
+            }
+          ]
+        },
+        {
+          "chunk_size": 800,
+          "query_prefix": false,
+          "n_chunks": 3,
+          "top1_hit_rate": 0.8,
+          "top3_hit_rate": 1.0,
+          "min_hit_score": 0.5077,
+          "max_miss_score": 0.6021,
+          "min_margin": -0.0053,
+          "avg_doc_embed_ms": 18.9,
+          "avg_query_embed_ms": 1.1,
+          "queries": [
+            {
+              "query": "Q4_K_M 量化能把模型压到多大",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6464,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4758,
+                  "doc": 1
+                },
+                {
+                  "score": 0.461,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.6464,
+              "best_miss_score": 0.4758
+            },
+            {
+              "query": "KV cache 量化怎么省内存",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7508,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5493,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5142,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.7508,
+              "best_miss_score": 0.5493
+            },
+            {
+              "query": "显存不够时 n_gpu_layers 怎么设置",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.7031,
+                  "doc": 0
+                },
+                {
+                  "score": 0.4817,
+                  "doc": 1
+                },
+                {
+                  "score": 0.449,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.7031,
+              "best_miss_score": 0.4817
+            },
+            {
+              "query": "vLLM 是怎么管理显存碎片的",
+              "expected_doc": 0,
+              "top3": [
+                {
+                  "score": 0.6705,
+                  "doc": 0
+                },
+                {
+                  "score": 0.511,
+                  "doc": 2
+                },
+                {
+                  "score": 0.498,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.6705,
+              "best_miss_score": 0.511
+            },
+            {
+              "query": "Pinia 和 Vuex 有什么区别",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5615,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5546,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5337,
+                  "doc": 2
+                }
+              ],
+              "best_hit_score": 0.5615,
+              "best_miss_score": 0.5546
+            },
+            {
+              "query": "Vue3 为什么不再需要 Vue.set",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.5077,
+                  "doc": 1
+                },
+                {
+                  "score": 0.4961,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4708,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5077,
+              "best_miss_score": 0.4961
+            },
+            {
+              "query": "Vite 开发服务器为什么启动快",
+              "expected_doc": 1,
+              "top3": [
+                {
+                  "score": 0.575,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5702,
+                  "doc": 0
+                },
+                {
+                  "score": 0.5696,
+                  "doc": 1
+                }
+              ],
+              "best_hit_score": 0.5696,
+              "best_miss_score": 0.575
+            },
+            {
+              "query": "WAL 模式对并发读写有什么帮助",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.6021,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5969,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5726,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5969,
+              "best_miss_score": 0.6021
+            },
+            {
+              "query": "复合索引的最左前缀原则是什么",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.5484,
+                  "doc": 2
+                },
+                {
+                  "score": 0.4562,
+                  "doc": 1
+                },
+                {
+                  "score": 0.3851,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.5484,
+              "best_miss_score": 0.4562
+            },
+            {
+              "query": "怎么用 user_version 做数据库迁移",
+              "expected_doc": 2,
+              "top3": [
+                {
+                  "score": 0.7451,
+                  "doc": 2
+                },
+                {
+                  "score": 0.5748,
+                  "doc": 1
+                },
+                {
+                  "score": 0.5156,
+                  "doc": 0
+                }
+              ],
+              "best_hit_score": 0.7451,
+              "best_miss_score": 0.5748
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "parity": [
+    {
+      "text": "为这个句子生成表示以用于检索相关文章：KV cache 量化...",
+      "cosine": 0.9508
+    },
+    {
+      "text": "KV cache 是推理内存占用的大头。每生成一个 toke...",
+      "cosine": 0.9381
+    },
+    {
+      "text": "SQLite 是嵌入式数据库，整个库就是一个文件。...",
+      "cosine": 0.9321
+    }
+  ],
+  "notes": []
+}

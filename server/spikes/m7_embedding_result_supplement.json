@@ -1,0 +1,112 @@
+{
+  "raw_norms": [
+    {
+      "stack": "A_llamacpp_gguf",
+      "raw_norms": [
+        6.36,
+        6.9272,
+        5.1608
+      ]
+    },
+    {
+      "stack": "B_fastembed_onnx",
+      "raw_norms": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "A_llamacpp_gguf": {
+    "prefix=True": {
+      "offdomain_scores": [
+        {
+          "query": "红烧肉怎么做才好吃",
+          "best_score": 0.2995
+        },
+        {
+          "query": "2026 年世界杯赛程安排",
+          "best_score": 0.2499
+        },
+        {
+          "query": "周杰伦最新专辑叫什么",
+          "best_score": 0.228
+        },
+        {
+          "query": "杭州今天天气怎么样",
+          "best_score": 0.292
+        }
+      ],
+      "max_offdomain_score": 0.2995,
+      "avg_query_embed_ms": 10.5
+    },
+    "prefix=False": {
+      "offdomain_scores": [
+        {
+          "query": "红烧肉怎么做才好吃",
+          "best_score": 0.2774
+        },
+        {
+          "query": "2026 年世界杯赛程安排",
+          "best_score": 0.3117
+        },
+        {
+          "query": "周杰伦最新专辑叫什么",
+          "best_score": 0.234
+        },
+        {
+          "query": "杭州今天天气怎么样",
+          "best_score": 0.2893
+        }
+      ],
+      "max_offdomain_score": 0.3117,
+      "avg_query_embed_ms": 8.5
+    }
+  },
+  "B_fastembed_onnx": {
+    "prefix=True": {
+      "offdomain_scores": [
+        {
+          "query": "红烧肉怎么做才好吃",
+          "best_score": 0.2663
+        },
+        {
+          "query": "2026 年世界杯赛程安排",
+          "best_score": 0.2506
+        },
+        {
+          "query": "周杰伦最新专辑叫什么",
+          "best_score": 0.2817
+        },
+        {
+          "query": "杭州今天天气怎么样",
+          "best_score": 0.2861
+        }
+      ],
+      "max_offdomain_score": 0.2861,
+      "avg_query_embed_ms": 1.9
+    },
+    "prefix=False": {
+      "offdomain_scores": [
+        {
+          "query": "红烧肉怎么做才好吃",
+          "best_score": 0.258
+        },
+        {
+          "query": "2026 年世界杯赛程安排",
+          "best_score": 0.3158
+        },
+        {
+          "query": "周杰伦最新专辑叫什么",
+          "best_score": 0.2854
+        },
+        {
+          "query": "杭州今天天气怎么样",
+          "best_score": 0.2835
+        }
+      ],
+      "max_offdomain_score": 0.3158,
+      "avg_query_embed_ms": 0.9
+    }
+  }
+}
