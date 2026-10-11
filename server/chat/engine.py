@@ -1,18 +1,21 @@
-"""对话编排：上下文拼接、停止转发。
+"""对话编排：上下文拼接（滑窗 / 摘要压缩）、停止转发。
 
 不知道 HTTP，也不直接碰模型实例——只经 model_manager 推理；
-会话/消息持久化委托 session_store，自身只保留运行态（当前生成会话）。
+会话/消息/压缩记录持久化委托 session_store，自身只保留运行态
+（当前生成会话）。
 """
 import json
 import threading
 from dataclasses import dataclass, fields
 from typing import Iterator
 
-from chat.context import fit_window
+from chat.context import (SUMMARY_PREFIX, fit_window, render_summary_request,
+                          split_overflow, strip_think)
 from config import SamplingParams, config
 from model_manager.manager import GenerateResult, ServiceError, model_manager
 from params.presets import snapshot as params_snapshot
-from session_store.base import Message, MessageObservability
+from session_store.base import (Compression, CompressionInput, Message,
+                                MessageObservability)
 from session_store.sqlite_store import session_store
 
 DEFAULT_TITLE = "新会话"
@@ -71,20 +74,114 @@ class ChatEngine:
     def _build_prompt(self, session_id: int,
                       exclude_message_id: int
                       ) -> tuple[list[dict], SamplingParams, str]:
-        """拼上下文并滑窗截断；同时返回本次生效参数与其快照（M5 落库）。
+        """拼上下文（按 context_strategy 分流滑窗/摘要）；返回生效参数与快照。
 
         参数每次生成前从 params 模块读取——改参数立即生效，不重载模型。
         """
-        history = [{"role": m.role, "content": m.content}
-                   for m in session_store.get_messages(session_id)
-                   if m.id != exclude_message_id]
+        msgs = [m for m in session_store.get_messages(session_id)
+                if m.id != exclude_message_id]
         snap = params_snapshot()
         params = SamplingParams(
             **{f.name: snap[f.name] for f in fields(SamplingParams)})
+        budget = config.n_ctx - params.max_tokens
+        if params.context_strategy == "summary":
+            prompt = self._build_summary_context(
+                session_id, msgs, params, budget, exclude_message_id)
+            if prompt is not None:
+                return prompt, params, json.dumps(snap, ensure_ascii=False)
+        history = [{"role": m.role, "content": m.content} for m in msgs]
         prompt = fit_window(params.system_prompt, history,
-                            budget=config.n_ctx - params.max_tokens,
+                            budget=budget,
                             count_tokens=model_manager.count_tokens)
         return prompt, params, json.dumps(snap, ensure_ascii=False)
+
+    # ---------- 摘要压缩（M6.5） ----------
+
+    def _build_summary_context(
+            self, session_id: int, msgs: list[Message],
+            params: SamplingParams, budget: int,
+            trigger_message_id: int) -> list[dict] | None:
+        """摘要策略拼上下文；返回 None 表示无需处理或压缩失败（回退滑窗）。
+
+        最终上下文 = system prompt + 摘要段 + 最近 N 轮原文（决策 E）；
+        增量追加：只压缩 id > covered_upto 的新溢出消息（决策 B）。
+        """
+        count = model_manager.count_tokens
+        total = (count(params.system_prompt) if params.system_prompt else 0) \
+            + sum(count(m.content) for m in msgs)
+        if total <= budget:
+            return None  # 未超限：不动作
+        cut = split_overflow([m.role for m in msgs],
+                             config.summary_keep_rounds)
+        if cut == 0:
+            return None  # 历史不足 N 轮，没有可压缩的溢出
+        overflow, kept = msgs[:cut], msgs[cut:]
+
+        latest = session_store.get_latest_compression(session_id)
+        new_msgs = [m for m in overflow
+                    if latest is None or m.id > latest.covered_upto]
+        if new_msgs:
+            summary = self._run_compression(
+                session_id, latest, new_msgs, trigger_message_id)
+            if summary is None:
+                return None  # 压缩失败降级：对话不中断（决策 D 兜底）
+        else:
+            summary = latest.summary  # 无新增溢出：复用既有摘要
+
+        # 兜底：摘要 + N 轮仍超预算（N 轮过大/摘要过长）→ 对 N 轮再滑窗
+        summary_block = SUMMARY_PREFIX + summary
+        kept_dicts = [{"role": m.role, "content": m.content} for m in kept]
+        if count(params.system_prompt + summary_block) \
+                + sum(count(m.content) for m in kept) > budget:
+            sys_text = "\n\n".join(
+                filter(None, [params.system_prompt, summary_block]))
+            return fit_window(sys_text, kept_dicts, budget=budget,
+                              count_tokens=count)
+
+        prompt = []
+        if params.system_prompt:
+            prompt.append({"role": "system", "content": params.system_prompt})
+        prompt.append({"role": "system", "content": summary_block})
+        prompt.extend(kept_dicts)
+        return prompt
+
+    def _run_compression(self, session_id: int,
+                         latest: Compression | None,
+                         new_msgs: list[Message],
+                         trigger_message_id: int) -> str | None:
+        """跑一次压缩推理并落库 compressions；失败（含锁被抢）返回 None。"""
+        prev_summary = latest.summary if latest else ""
+        source = [{"role": m.role, "content": m.content} for m in new_msgs]
+        request = render_summary_request(prev_summary, source)
+        comp_params = SamplingParams(
+            temperature=config.summary_temperature,
+            max_tokens=config.summary_max_tokens)
+        result = GenerateResult()
+        try:
+            summary = strip_think(
+                "".join(model_manager.generate(request, comp_params, result)))
+        except Exception:
+            return None
+        if not summary or result.stopped:
+            return None  # 空摘要/被停止：不可用，降级滑窗
+        count = model_manager.count_tokens
+        session_store.add_compression(CompressionInput(
+            session_id=session_id,
+            trigger_message_id=trigger_message_id,
+            prev_summary=prev_summary,
+            source_messages=json.dumps(source, ensure_ascii=False),
+            source_prompt=result.prompt_text or "",
+            summary=summary,
+            covered_upto=new_msgs[-1].id,  # 增量游标：实际纳入的最大消息 id
+            source_tokens=sum(count(m.content) for m in new_msgs),
+            summary_tokens=count(summary),
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            ttft_ms=result.ttft_ms,
+            prefill_ms=result.prefill_ms,
+            decode_ms=result.decode_ms,
+        ))
+        return summary
 
     def _wrap(self, assistant_msg: Message, tokens: Iterator[str],
               result: GenerateResult, snapshot: str) -> Iterator[str]:

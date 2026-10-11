@@ -1,5 +1,5 @@
 """会话管理路由：列表 / 新建 / 取消息 / 重命名 / 删除（技术方案 §3.2）
-+ M5 消息观测数据端点。
++ M5 消息观测数据端点 + M6.5 摘要压缩观测。
 
 只做 HTTP ↔ session_store 调用转换；业务错误由全局 handler 转 409。
 """
@@ -9,6 +9,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from model_manager.manager import ServiceError
+from params.presets import get as get_params_dict
+from session_store.base import Compression
 from session_store.sqlite_store import session_store
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -41,9 +43,52 @@ def create_session(req: CreateRequest):
 
 @router.get("/{session_id}/messages")
 def get_messages(session_id: int):
-    return [{"id": m.id, "role": m.role, "content": m.content,
-             "created_at": m.created_at}
-            for m in session_store.get_messages(session_id)]
+    """消息列表（M6.5 起包一层）：summary_covered_upto 为当前生效摘要
+    覆盖到的最大消息 id（id ≤ 它的消息细节已丢失）；滑窗策略或无摘要
+    时为 None——切回滑窗标识即消失，压缩记录本身保留可回切。
+    """
+    covered_upto = None
+    if get_params_dict()["context_strategy"] == "summary":
+        latest = session_store.get_latest_compression(session_id)
+        if latest is not None:
+            covered_upto = latest.covered_upto
+    return {
+        "messages": [{"id": m.id, "role": m.role, "content": m.content,
+                      "created_at": m.created_at}
+                     for m in session_store.get_messages(session_id)],
+        "summary_covered_upto": covered_upto,
+    }
+
+
+def _compression_payload(session_id: int, message_id: int) -> dict | None:
+    """调用链（M6.5）：本消息触发的新压缩给完整记录；只复用既有摘要给
+    active_id；会话无摘要为 None。"""
+    triggered = session_store.get_compression_by_trigger(session_id,
+                                                         message_id)
+    if triggered is not None:
+        return _compression_dict(triggered, triggered=True)
+    latest = session_store.get_latest_compression(session_id)
+    if latest is not None:
+        return {"triggered": False, "active_id": latest.id}
+    return None
+
+
+def _compression_dict(c: Compression, triggered: bool) -> dict:
+    return {
+        "triggered": triggered,
+        "id": c.id,
+        "prev_summary": c.prev_summary,
+        "source_messages": json.loads(c.source_messages),
+        "source_prompt": c.source_prompt,
+        "summary": c.summary,
+        "covered_upto": c.covered_upto,
+        "source_tokens": c.source_tokens,
+        "summary_tokens": c.summary_tokens,
+        "input_tokens": c.input_tokens,
+        "output_tokens": c.output_tokens,
+        "timing": {"ttft_ms": c.ttft_ms, "prefill_ms": c.prefill_ms,
+                   "decode_ms": c.decode_ms},
+    }
 
 
 def _loads(raw: str | None):
@@ -76,6 +121,7 @@ def get_observability(session_id: int, message_id: int):
         "params_snapshot": _loads(m.params_snapshot),
         "prompt_text": m.prompt_text,
         "prompt_messages": _loads(m.prompt_messages),
+        "compression": _compression_payload(session_id, message_id),
     }
 
 

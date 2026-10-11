@@ -8,13 +8,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 @dataclass(frozen=True)
 class SamplingParams:
-    """推理参数默认值，对齐 Qwen3 官方推荐（见技术方案 3.3）。"""
+    """推理参数默认值，对齐 Qwen3 官方推荐（见技术方案 3.3）。
+
+    context_strategy：上下文超限处理策略（M6.5，决策 A 全局开关），
+    sliding_window = 滑窗硬截断（M3），summary = 摘要压缩。
+    """
     temperature: float = 0.7
     top_p: float = 0.8
     top_k: int = 20
     repetition_penalty: float = 1.05
     max_tokens: int = 2048
     system_prompt: str = ""
+    context_strategy: str = "sliding_window"
 
 
 @dataclass(frozen=True)
@@ -30,6 +35,10 @@ class Config:
     db_path: str = os.getenv(
         "DB_PATH", str(PROJECT_ROOT / "server" / "data" / "app.db"))
     sampling: SamplingParams = field(default_factory=SamplingParams)
+    # M6.5 摘要压缩常量（spike 实测定值，见 spikes/summary_compression_spike.py）
+    summary_keep_rounds: int = 4    # 摘要之外保留的最近对话轮数 N
+    summary_max_tokens: int = 512   # 压缩调用的输出上限（含 think 块余量）
+    summary_temperature: float = 0.2
 
 
 config = Config()
