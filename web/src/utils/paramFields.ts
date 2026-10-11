@@ -17,6 +17,7 @@ export function validateParamFields(values: {
   top_k?: number
   repetition_penalty?: number
   max_tokens?: number
+  context_strategy?: string
 }): string | null {
   if (values.temperature !== undefined && values.temperature < 0) return 'temperature 必须 ≥ 0'
   if (values.top_p !== undefined && !(values.top_p > 0 && values.top_p <= 1))
@@ -30,5 +31,10 @@ export function validateParamFields(values: {
     (!Number.isInteger(values.max_tokens) || values.max_tokens < 1)
   )
     return 'max_tokens 必须是正整数'
+  if (
+    values.context_strategy !== undefined &&
+    !['sliding_window', 'summary'].includes(values.context_strategy)
+  )
+    return "context_strategy 必须是 ['sliding_window', 'summary'] 之一"
   return null
 }

@@ -9,7 +9,7 @@ import 'highlight.js/styles/github.css'
 import type { ChatMessage } from '../api'
 import { splitThink } from '../utils/think'
 
-const props = defineProps<{ message: ChatMessage }>()
+const props = defineProps<{ message: ChatMessage; compressed?: boolean }>()
 const emit = defineEmits<{ openDebug: [message: ChatMessage] }>()
 
 const bodyRef = ref<HTMLElement>()
@@ -44,7 +44,11 @@ watch(
 
 <template>
   <div class="bubble-row" :class="message.role">
-    <div class="bubble">
+    <div class="bubble" :class="{ compressed }">
+      <!-- M6.5：该消息已被摘要压缩覆盖（有损），原文仍在但不再进入模型上下文 -->
+      <div v-if="compressed" class="compressed-tag" title="此消息已纳入摘要，细节不再进入模型上下文">
+        已纳入摘要
+      </div>
       <div v-if="parts.thinking !== null" class="think-block">
         <button class="think-toggle" @click="thinkOpen = !thinkOpen">
           {{ parts.thinkingDone ? '思考过程' : '正在思考…' }}
@@ -82,6 +86,15 @@ watch(
 }
 .bubble-row.user .bubble {
   background: #d9ecff;
+}
+/* M6.5 有损标识：被摘要覆盖的历史消息褪色 + 角标 */
+.bubble.compressed {
+  opacity: 0.55;
+}
+.compressed-tag {
+  font-size: 11px;
+  color: #909399;
+  margin-bottom: 4px;
 }
 .bubble-actions {
   text-align: right;

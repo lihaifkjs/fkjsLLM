@@ -65,6 +65,8 @@ export function useChatStream() {
         onDone: (done) => {
           lastUsage.value = done.usage
           cleanup()
+          // 本轮可能触发了摘要压缩（M6.5）：刷新覆盖游标让有损标识立即出现
+          void sessionStore.refreshCoverage()
         },
         onError: (error) => {
           // 会话在后端已不存在（如被删除）：提示并清空视图，引导新建

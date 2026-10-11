@@ -38,6 +38,9 @@ const sourceLabel = computed(() =>
       <span v-else class="empty-value">（空）</span>
     </el-descriptions-item>
     <el-descriptions-item label="预设">{{ presetLabel }}（{{ snapshot.preset }}）</el-descriptions-item>
+    <el-descriptions-item label="context_strategy">
+      {{ snapshot.context_strategy === 'summary' ? '摘要压缩' : '滑窗硬截断' }}
+    </el-descriptions-item>
     <el-descriptions-item label="来源">{{ sourceLabel }}</el-descriptions-item>
   </el-descriptions>
   <el-empty v-else description="该消息无参数快照（生成中或 M5 前的老消息）" />

@@ -4,10 +4,10 @@
 import { computed, ref, watch, type Component } from 'vue'
 import type { ChatMessage } from '../api'
 import { useIsMobile } from '../composables/useIsMobile'
-import PlaceholderPane from './debug/PlaceholderPane.vue'
 import RawPane from './debug/RawPane.vue'
 import PromptPane from './debug/PromptPane.vue'
 import TokensPane from './debug/TokensPane.vue'
+import TracePane from './debug/TracePane.vue'
 import PerfPane from './debug/PerfPane.vue'
 import ParamsSnapshotPane from './debug/ParamsSnapshotPane.vue'
 
@@ -20,12 +20,13 @@ interface DebugTab {
 // 二期候选标签页（PRD 3.7），未落地的统一渲染占位组件
 // 「原始输出」为协议外新增：展示该消息的 SSE 帧序列
 // M5 已落地：Prompt 预览 / Token 统计 / 性能指标 / 生效参数快照（数据源为 observability 端点，
-// 生成中或取数失败时各 pane 自行降级到帧统计）；「调用链」保持占位
+// 生成中或取数失败时各 pane 自行降级到帧统计）；
+// M6.5 已落地：调用链（摘要压缩记录；M7/M9 将追加检索与工具调用记录）
 const TABS: DebugTab[] = [
   { key: 'raw', label: '原始输出', component: RawPane },
   { key: 'prompt', label: 'Prompt 预览', component: PromptPane },
   { key: 'tokens', label: 'Token 统计', component: TokensPane },
-  { key: 'trace', label: '调用链', component: PlaceholderPane },
+  { key: 'trace', label: '调用链', component: TracePane },
   { key: 'perf', label: '性能指标', component: PerfPane },
   { key: 'params', label: '生效参数快照', component: ParamsSnapshotPane },
 ]

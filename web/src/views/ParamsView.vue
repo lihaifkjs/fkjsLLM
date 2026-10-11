@@ -100,6 +100,7 @@ async function onSave() {
       repetition_penalty: form.repetition_penalty,
       max_tokens: form.max_tokens,
       system_prompt: form.system_prompt,
+      context_strategy: form.context_strategy,
     })
     Object.assign(form, settingsStore.params)
     ElMessage.success('参数已保存')
@@ -187,6 +188,13 @@ async function onSave() {
           :rows="4"
           placeholder="留空则不使用 system prompt"
         />
+      </div>
+      <div class="field">
+        <span class="field-label">上下文策略（M6.5）</span>
+        <el-select v-model="form.context_strategy">
+          <el-option label="滑窗硬截断（丢弃最早对话）" value="sliding_window" />
+          <el-option label="摘要压缩（旧对话压缩为摘要，有损）" value="summary" />
+        </el-select>
       </div>
 
       <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>

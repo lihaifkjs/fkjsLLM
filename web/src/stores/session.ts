@@ -13,11 +13,14 @@ export const useSessionStore = defineStore('session', () => {
   const sessionId = ref<number | null>(null)
   const title = ref(DEFAULT_TITLE)
   const messages = ref<ChatMessage[]>([])
+  // M6.5：当前会话生效摘要覆盖到的最大消息 id（滑窗策略/无摘要为 null）
+  const summaryCoveredUpto = ref<number | null>(null)
 
-  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[]) {
+  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null) {
     sessionId.value = id
     title.value = sessionTitle
     messages.value = msgs
+    summaryCoveredUpto.value = coveredUpto
   }
 
   // 列表项提到最前（列表按 updated_at 倒序，最新消息的会话排第一）
@@ -49,9 +52,16 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function openSession(id: number) {
-    const msgs = await api.getSessionMessages(id)
+    const resp = await api.getSessionMessages(id)
     const summary = sessions.value.find((s) => s.id === id)
-    select(id, summary?.title ?? DEFAULT_TITLE, msgs)
+    select(id, summary?.title ?? DEFAULT_TITLE, resp.messages, resp.summary_covered_upto)
+  }
+
+  // 一轮对话结束后刷新摘要覆盖范围（本轮可能触发了压缩）；只更新游标，不动消息列表
+  async function refreshCoverage() {
+    if (sessionId.value === null) return
+    const resp = await api.getSessionMessages(sessionId.value)
+    summaryCoveredUpto.value = resp.summary_covered_upto
   }
 
   async function rename(id: number, newTitle: string) {
@@ -130,9 +140,11 @@ export const useSessionStore = defineStore('session', () => {
     sessionId,
     title,
     messages,
+    summaryCoveredUpto,
     loadSessions,
     createSession,
     openSession,
+    refreshCoverage,
     rename,
     remove,
     handleSessionGone,

@@ -13,6 +13,7 @@ const DEFAULTS: InferenceParams = {
   repetition_penalty: 1.05,
   max_tokens: 2048,
   system_prompt: '',
+  context_strategy: 'sliding_window',
   preset: '',
 }
 
