@@ -1,9 +1,20 @@
 # 模型文件（9GB，不入库，下载方式见 模型下载.md）
 *.gguf
 
+# M8 微调：MLX/HF 权重与训练产物（大文件不入库）
+server/finetune/models/
+server/finetune/data/external/
+server/finetune/adapters/
+server/finetune/fused/
+
+# M8 微调：过程产物（日志/评测中间文件不入库）
+server/finetune/*.log
+server/finetune/data/final/eval_failures.json
+
 # Python
 __pycache__/
 *.pyc
+.venv/
 
 # SQLite 数据文件（会话/消息/参数，本地状态不入库）
 server/data/

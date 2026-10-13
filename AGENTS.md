@@ -30,6 +30,7 @@
 - [M7开发计划](docs/M7开发计划.md)：M7 RAG 知识库开发计划（2026-10-11 精简版，只做核心链路）——documents/chunks/retrievals 三表（user_version 4）/ bge-small-zh embedding（CPU）/ 检索注入编排 / /knowledge 极简管理页（无详情页）/ 会话级开关 / 调用链检索观测，含决策记录（A–K）与风险坑点。已确认：pdf 不做、单知识库。**M7 已竣工**。
 - [后端m7实现](docs/后端m7实现.md)：M7 后端实现说明——fastembed 选型与 spike 定值（阈值 0.40 区间依据）/ rag 模块四件套 / 检索注入编排与降级 / retrievals 快照语义 / observability retrieval 两态，含生产库提前迁移事件记录。
 - [前端m7实现](docs/前端m7实现.md)：M7 前端实现说明——KnowledgeView 管理页 / 会话开关（PATCH 失败回弹）/ TracePane 检索区块 / mock 最小桩；浏览器实测未做（从简决策）。
+- [M8开发计划](docs/M8开发计划.md)：M8 身份微调（QLoRA）开发计划——身份设定（fkjs/lihai 基于 Qwen）/ 数据集配比与 replay 防遗忘 / 双端工具链（Mac mlx-lm 验证数据有效性 → Windows 4070Ti transformers+peft+trl 正式训练）/ GGUF 转换接入第二模型条目 / 对照实验与 tool calling 回归验证，含决策记录（A–F）与风险坑点。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。
