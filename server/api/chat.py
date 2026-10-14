@@ -29,7 +29,7 @@ def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-def _stream(meta, tokens: Iterator[str], result) -> Iterator[str]:
+def _stream(meta, events, result) -> Iterator[str]:
     yield _sse("meta", {
         "session_id": meta.session_id,
         "user_message_id": meta.user_message_id,
@@ -37,8 +37,11 @@ def _stream(meta, tokens: Iterator[str], result) -> Iterator[str]:
         "title": meta.title,
     })
     try:
-        for text in tokens:
-            yield _sse("token", {"text": text})
+        for kind, payload in events:
+            if kind == "token":
+                yield _sse("token", {"text": payload})
+            elif kind == "tool_call":  # M9：工具调用中间态
+                yield _sse("tool_call", payload)
         yield _sse("done", {
             "usage": {
                 "input_tokens": result.input_tokens,

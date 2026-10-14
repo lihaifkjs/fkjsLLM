@@ -63,6 +63,14 @@ class Config:
     rag_max_inject_tokens: int = 512  # 注入段 token 上限
     rag_upload_max_bytes: int = 262144  # 256KB
     rag_query_prefix: str = "为这个句子生成表示以用于检索相关文章："  # bge 检索指令前缀
+    # M9 网页搜索工具常量（spike 定值，见 spikes/m9_web_search_spike.py）
+    tool_search_top_n: int = 5        # 注入的结果条数上限
+    tool_fetch_pages: int = 2         # 抓正文的条数（其余结果只有 snippet）
+    tool_page_max_chars: int = 1500   # 单条正文截断（字）
+    tool_inject_max_tokens: int = 768  # tool response 总 token 上限
+    tool_search_timeout: int = 10     # curl 单次超时（秒）
+    tool_search_retries: int = 2      # 撞墙/空结果重试次数
+    tool_search_retry_delay: float = 2.0  # 重试间隔（秒）
 
 
 config = Config()

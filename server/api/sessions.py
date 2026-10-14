@@ -21,21 +21,24 @@ class CreateRequest(BaseModel):
 
 
 class UpdateRequest(BaseModel):
-    """部分更新：title / rag_enabled 至少给一个。"""
+    """部分更新：title / rag_enabled / tool_enabled 至少给一个。"""
     title: str | None = None
     rag_enabled: bool | None = None
+    tool_enabled: bool | None = None  # M9 网页搜索工具开关
 
 
 def _session_dict(s) -> dict:
     return {"id": s.id, "title": s.title,
             "created_at": s.created_at, "updated_at": s.updated_at,
-            "rag_enabled": bool(s.rag_enabled)}
+            "rag_enabled": bool(s.rag_enabled),
+            "tool_enabled": bool(s.tool_enabled)}
 
 
 @router.get("")
 def list_sessions():
     return [{"id": s.id, "title": s.title, "updated_at": s.updated_at,
-             "rag_enabled": bool(s.rag_enabled)}
+             "rag_enabled": bool(s.rag_enabled),
+             "tool_enabled": bool(s.tool_enabled)}
             for s in session_store.list_sessions()]
 
 
@@ -104,6 +107,24 @@ def _retrieval_payload(session_id: int, message_id: int) -> dict | None:
             "latency_ms": r.latency_ms}
 
 
+def _tool_call_payload(session_id: int, message_id: int) -> dict | None:
+    """调用链（M9）：会话启用工具且本轮有落库 → 完整记录（含失败态）；
+    未启用 / 无记录 → None（仿 retrieval 两态）。"""
+    if not session_store.get_session(session_id).tool_enabled:
+        return None
+    t = session_store.get_tool_call_by_trigger(session_id, message_id)
+    if t is None:
+        return None
+    try:
+        arguments = json.loads(t.arguments)
+    except json.JSONDecodeError:
+        arguments = t.arguments  # parse_error 时原文下发
+    return {"name": t.name, "arguments": arguments, "query": t.query,
+            "status": t.status, "results": json.loads(t.results),
+            "inject_tokens": t.inject_tokens, "latency_ms": t.latency_ms,
+            "error": t.error}
+
+
 def _compression_dict(c: Compression, triggered: bool) -> dict:
     return {
         "triggered": triggered,
@@ -154,12 +175,14 @@ def get_observability(session_id: int, message_id: int):
         "prompt_messages": _loads(m.prompt_messages),
         "compression": _compression_payload(session_id, message_id),
         "retrieval": _retrieval_payload(session_id, message_id),
+        "tool_call": _tool_call_payload(session_id, message_id),
     }
 
 
 @router.patch("/{session_id}")
 def update_session(session_id: int, req: UpdateRequest):
-    if req.title is None and req.rag_enabled is None:
+    if req.title is None and req.rag_enabled is None \
+            and req.tool_enabled is None:
         raise HTTPException(400, {"code": "EMPTY_UPDATE",
                                   "message": "没有需要更新的字段"})
     if req.title is not None:
@@ -169,6 +192,8 @@ def update_session(session_id: int, req: UpdateRequest):
         session_store.rename_session(session_id, req.title.strip())
     if req.rag_enabled is not None:
         session_store.set_rag_enabled(session_id, req.rag_enabled)
+    if req.tool_enabled is not None:
+        session_store.set_tool_enabled(session_id, req.tool_enabled)
     return _session_dict(session_store.get_session(session_id))
 
 

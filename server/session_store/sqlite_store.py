@@ -12,7 +12,8 @@ from config import config
 from model_manager.manager import ServiceError
 from session_store.base import (Chunk, Compression, CompressionInput,
                                 Document, Message, MessageObservability,
-                                Retrieval, RetrievalInput, Session)
+                                Retrieval, RetrievalInput, Session, ToolCall,
+                                ToolCallInput)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (
@@ -20,7 +21,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   title TEXT NOT NULL DEFAULT '新会话',
   created_at REAL NOT NULL,
   updated_at REAL NOT NULL,
-  rag_enabled INTEGER NOT NULL DEFAULT 0  -- M7：会话级知识库检索开关
+  rag_enabled INTEGER NOT NULL DEFAULT 0,  -- M7：会话级知识库检索开关
+  tool_enabled INTEGER NOT NULL DEFAULT 0   -- M9：会话级网页搜索工具开关
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -124,14 +126,33 @@ CREATE TABLE IF NOT EXISTS retrievals (
 );
 
 CREATE INDEX IF NOT EXISTS idx_retrievals_session ON retrievals(session_id, id);
+
+-- M9 网页搜索工具调用（user_version 5）：results 内嵌搜索结果快照 JSON，
+-- 与网页生命周期解耦（仿 retrievals）；一轮回答至多一条（单次搜索，无链式）
+CREATE TABLE IF NOT EXISTS tool_calls (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  trigger_message_id INTEGER NOT NULL,  -- 本轮 assistant 占位消息 id
+  name TEXT NOT NULL,               -- 工具名（本期恒 web_search）
+  arguments TEXT NOT NULL,          -- 模型输出的原始 arguments JSON 文本
+  query TEXT NOT NULL,              -- 解析出的搜索词（parse_error 时为空串）
+  status TEXT NOT NULL,             -- success / search_error / parse_error
+  results TEXT NOT NULL DEFAULT '[]',  -- JSON 快照 [{title, url, snippet, content}]
+  inject_tokens INTEGER,            -- 拼回上下文的 tool response token 数
+  latency_ms REAL,                  -- 搜索 + 正文提取耗时
+  error TEXT,
+  created_at REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tool_calls_session ON tool_calls(session_id, id);
 """
 
 # user_version 1：M5 观测列；2：M6 experiments/experiment_runs 两表；
 # 3：M6.5 compressions 表；4：M7 documents/chunks/retrievals 三表 +
-# sessions.rag_enabled 列
+# sessions.rag_enabled 列；5：M9 tool_calls 表 + sessions.tool_enabled 列
 # 老库（一期建成，version 0）走 ALTER TABLE 补列；
-# M6/M6.5/M7 的表在建库脚本里就是 IF NOT EXISTS，新老库都覆盖，迁移只推版本号
-_SCHEMA_VERSION = 4
+# M6/M6.5/M7/M9 的表在建库脚本里就是 IF NOT EXISTS，新老库都覆盖，迁移只推版本号
+_SCHEMA_VERSION = 5
 _M5_COLUMNS = [
     "prompt_text TEXT",
     "prompt_messages TEXT",
@@ -144,13 +165,16 @@ _M5_COLUMNS = [
 _M7_SESSION_COLUMNS = [
     "rag_enabled INTEGER NOT NULL DEFAULT 0",
 ]
+_M9_SESSION_COLUMNS = [
+    "tool_enabled INTEGER NOT NULL DEFAULT 0",
+]
 
 _MESSAGE_COLS = ("id, session_id, role, content, created_at,"
                  " input_tokens, output_tokens, params_snapshot,"
                  " prompt_text, prompt_messages, prompt_seg_tokens,"
                  " prompt_eval_tokens, ttft_ms, prefill_ms, decode_ms")
 
-_SESSION_COLS = "id, title, created_at, updated_at, rag_enabled"
+_SESSION_COLS = "id, title, created_at, updated_at, rag_enabled, tool_enabled"
 
 _COMPRESSION_COLS = ("id, session_id, trigger_message_id, prev_summary,"
                      " source_messages, source_prompt, summary, covered_upto,"
@@ -165,6 +189,10 @@ _CHUNK_COLS = ("id, document_id, seq, content, char_count, embedding,"
 
 _RETRIEVAL_COLS = ("id, session_id, trigger_message_id, query, hits,"
                    " injected_tokens, latency_ms, created_at")
+
+_TOOL_CALL_COLS = ("id, session_id, trigger_message_id, name, arguments,"
+                   " query, status, results, inject_tokens, latency_ms,"
+                   " error, created_at")
 
 
 class SqliteSessionStore:
@@ -195,6 +223,13 @@ class SqliteSessionStore:
             existing = {row[1] for row in
                         self._conn.execute("PRAGMA table_info(sessions)")}
             for column in _M7_SESSION_COLUMNS:
+                if column.split()[0] not in existing:
+                    self._conn.execute(
+                        f"ALTER TABLE sessions ADD COLUMN {column}")
+        if version < 5:
+            existing = {row[1] for row in
+                        self._conn.execute("PRAGMA table_info(sessions)")}
+            for column in _M9_SESSION_COLUMNS:
                 if column.split()[0] not in existing:
                     self._conn.execute(
                         f"ALTER TABLE sessions ADD COLUMN {column}")
@@ -244,6 +279,17 @@ class SqliteSessionStore:
         with self._lock:
             cur = self._conn.execute(
                 "UPDATE sessions SET rag_enabled = ? WHERE id = ?",
+                (1 if enabled else 0, session_id))
+            self._conn.commit()
+        if cur.rowcount == 0:
+            raise ServiceError("SESSION_NOT_FOUND", f"会话 {session_id} 不存在")
+        return self.get_session(session_id)
+
+    def set_tool_enabled(self, session_id: int, enabled: bool) -> Session:
+        """M9：会话级网页搜索工具开关。"""
+        with self._lock:
+            cur = self._conn.execute(
+                "UPDATE sessions SET tool_enabled = ? WHERE id = ?",
                 (1 if enabled else 0, session_id))
             self._conn.commit()
         if cur.rowcount == 0:
@@ -483,6 +529,40 @@ class SqliteSessionStore:
                 " ORDER BY id DESC LIMIT 1",
                 (session_id, trigger_message_id)).fetchone()
         return Retrieval(*row) if row else None
+
+    # ---------- 工具调用记录（M9） ----------
+
+    def add_tool_call(self, record: ToolCallInput) -> ToolCall:
+        now = time.time()
+        with self._lock:
+            cur = self._conn.execute(
+                "INSERT INTO tool_calls"
+                " (session_id, trigger_message_id, name, arguments, query,"
+                " status, results, inject_tokens, latency_ms, error,"
+                " created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (record.session_id, record.trigger_message_id, record.name,
+                 record.arguments, record.query, record.status,
+                 record.results, record.inject_tokens, record.latency_ms,
+                 record.error, now))
+            self._conn.commit()
+            return ToolCall(id=cur.lastrowid, created_at=now,
+                            **{f: getattr(record, f) for f in (
+                                "session_id", "trigger_message_id", "name",
+                                "arguments", "query", "status", "results",
+                                "inject_tokens", "latency_ms", "error")})
+
+    def get_tool_call_by_trigger(
+            self, session_id: int,
+            trigger_message_id: int) -> ToolCall | None:
+        """该条 assistant 消息触发的那次工具调用；未触发过返回 None。"""
+        with self._lock:
+            row = self._conn.execute(
+                f"SELECT {_TOOL_CALL_COLS} FROM tool_calls"
+                " WHERE session_id = ? AND trigger_message_id = ?"
+                " ORDER BY id DESC LIMIT 1",
+                (session_id, trigger_message_id)).fetchone()
+        return ToolCall(*row) if row else None
 
 
 session_store = SqliteSessionStore(config.db_path)

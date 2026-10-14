@@ -3,6 +3,7 @@ uvicorn[standard]>=0.30
 llama-cpp-python>=0.3
 python-multipart  # FastAPI multipart 上传（M7 知识库）
 fastembed>=0.9    # M7 RAG embedding（onnxruntime）
+trafilatura>=2.0  # M9 网页正文提取（搜索走 subprocess 系统 curl，无 HTTP 库依赖）
 
 # llama-cpp-python 安装说明：
 # CPU 预编译 wheel（当前）：

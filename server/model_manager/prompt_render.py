@@ -32,9 +32,14 @@ def count_text(llm: Llama, text: str) -> int:
     return len(llm.tokenize(text.encode("utf-8"), add_bos=False, special=True))
 
 
-def render_prompt(llm: Llama, messages: list[dict]) -> str:
-    """渲染后的完整模型输入文本（含 <|im_start|> 等特殊 token 与生成引导符）。"""
-    return _build_formatter(llm)(messages=messages).prompt
+def render_prompt(llm: Llama, messages: list[dict],
+                  tools: list[dict] | None = None) -> str:
+    """渲染后的完整模型输入文本（含 <|im_start|> 等特殊 token 与生成引导符）。
+
+    tools（M9）：传入时与 create_chat_completion 同款注入工具定义段——
+    spike 实测不传会产生约 140 token 的口径偏差（工具定义段漏算）。
+    """
+    return _build_formatter(llm)(messages=messages, tools=tools).prompt
 
 
 def count_prompt_tokens(llm: Llama, messages: list[dict]) -> int:
@@ -42,18 +47,21 @@ def count_prompt_tokens(llm: Llama, messages: list[dict]) -> int:
     return count_text(llm, render_prompt(llm, messages))
 
 
-def segment_tokens(llm: Llama, messages: list[dict]) -> dict:
+def segment_tokens(llm: Llama, messages: list[dict],
+                   tools: list[dict] | None = None) -> dict:
     """分段 token 统计：system / history（滑窗保留的历史轮）/ current（当前输入）。
 
     前缀差分：逐前缀渲染，相邻前缀 token 数相减得每条消息的 token 开销。
     每个前缀渲染都带同样的生成引导符尾巴（<|im_start|>assistant\\n），差分
     时被消掉；它只计入第 0 条消息一段（system 存在时即 system 段），多出的
     几个 token 是生成引导符本身的开销。
+    tools（M9）传入时每个前缀都带工具定义段，差分相消、首段（system）
+    包含定义段约 140 token——口径与真实推理输入一致。
     """
     formatter = _build_formatter(llm)
     normalized = _normalize_messages(messages)
     counts = [
-        count_text(llm, formatter(messages=normalized[:k]).prompt)
+        count_text(llm, formatter(messages=normalized[:k], tools=tools).prompt)
         for k in range(1, len(normalized) + 1)
     ]
     per_message = [counts[0]] + [counts[k] - counts[k - 1]
@@ -75,7 +83,8 @@ def _normalize_messages(messages: list[dict]) -> list[dict]:
     （split('</think>')[-1]）。直接逐前缀渲染时，同一 assistant 消息在
     短前缀里是「最后一条」think 被保留、在长前缀里变历史被剥掉，前缀
     差分会出现负值——先按最终渲染口径统一预处理，差分才单调。
-    仅限无 tools 的对话路径（tools 分支模板另有逻辑，M9 再处理）。
+    仅限无结构化 tool_calls 字段的对话路径（M9 工具轮的 assistant 消息
+    以 <tool_call> 文本形式存在 content 里，同样走 split 剥壳逻辑）。
     """
     last_query = max((i for i, m in enumerate(messages)
                       if m["role"] == "user"), default=-1)

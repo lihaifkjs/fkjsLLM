@@ -180,10 +180,12 @@ class ModelManager:
         messages: list[dict],
         params: SamplingParams,
         result: GenerateResult,
+        tools: list[dict] | None = None,
     ) -> Iterator[str]:
         """返回 token 迭代器；每 token 检查停止信号，结束后回填 result。
 
         同步阻塞迭代器——由 api 层放入线程池消费，不碰事件循环。
+        tools（M9）：传入即透传 create_chat_completion 开启工具决策。
         """
         if not self._gen_lock.acquire(blocking=False):
             raise ServiceError(
@@ -196,7 +198,8 @@ class ModelManager:
             self._stop_event = threading.Event()
             stop_event = self._stop_event
         try:
-            yield from self._iterate(llm, messages, params, result, stop_event)
+            yield from self._iterate(llm, messages, params, result,
+                                     stop_event, tools)
         finally:
             with self._lock:
                 self._stop_event = None
@@ -204,15 +207,19 @@ class ModelManager:
 
     def _iterate(self, llm: Llama, messages: list[dict],
                  params: SamplingParams, result: GenerateResult,
-                 stop_event: threading.Event) -> Iterator[str]:
+                 stop_event: threading.Event,
+                 tools: list[dict] | None = None) -> Iterator[str]:
         # 渲染完整 prompt 并精确计数（账单口径），同时按段统计 token 占比
         result.prompt_messages = messages
-        result.prompt_text = prompt_render.render_prompt(llm, messages)
+        result.prompt_text = prompt_render.render_prompt(llm, messages, tools)
         result.input_tokens = prompt_render.count_text(llm, result.prompt_text)
-        result.seg_tokens = prompt_render.segment_tokens(llm, messages)
+        result.seg_tokens = prompt_render.segment_tokens(llm, messages, tools)
         # verbose=False 时 llama-cpp 不自动重置计时，需手动——
         # 全局生成锁保证单路，perf 计数器无并发干扰
         llm._ctx.reset_timings()
+        kwargs = {}
+        if tools is not None:  # 不传时完全不出现，避免触发模板的 tools 分支差异
+            kwargs = {"tools": tools, "tool_choice": "auto"}
         stream = llm.create_chat_completion(
             messages=messages,
             temperature=params.temperature,
@@ -221,6 +228,7 @@ class ModelManager:
             repeat_penalty=params.repetition_penalty,
             max_tokens=params.max_tokens,
             stream=True,
+            **kwargs,
         )
         t0 = time.perf_counter()
         try:

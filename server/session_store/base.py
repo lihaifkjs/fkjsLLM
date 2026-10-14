@@ -32,6 +32,11 @@
   add_retrieval(record: RetrievalInput) -> Retrieval
   get_retrieval_by_trigger(session_id, trigger_message_id)
       -> Retrieval | None                   # 该消息触发的那次检索（调用链用）
+  # M9 网页搜索工具调用（tool_calls 表 + sessions.tool_enabled）
+  set_tool_enabled(session_id, enabled) -> Session  # M9 会话级搜索开关
+  add_tool_call(record: ToolCallInput) -> ToolCall
+  get_tool_call_by_trigger(session_id, trigger_message_id)
+      -> ToolCall | None                    # 该消息触发的那次工具调用（调用链用）
 """
 from dataclasses import dataclass
 
@@ -43,6 +48,7 @@ class Session:
     created_at: float
     updated_at: float
     rag_enabled: int = 0  # M7：会话级知识库检索开关（0/1）
+    tool_enabled: int = 0  # M9：会话级网页搜索工具开关（0/1）
 
 
 @dataclass
@@ -177,4 +183,40 @@ class Retrieval:
     hits: str
     injected_tokens: int | None
     latency_ms: float | None
+    created_at: float
+
+
+@dataclass
+class ToolCallInput:
+    """一次工具调用的入库载荷（M9）。
+
+    results 为搜索结果快照 JSON 字符串 [{title, url, snippet, content}]——
+    网页内容随时间变化，快照即历史真相（仿 retrievals 决策 H）。
+    status: success / search_error / parse_error。
+    """
+    session_id: int
+    trigger_message_id: int  # 本轮 assistant 占位消息 id
+    name: str                # 本期恒 web_search
+    arguments: str           # 模型输出的原始 arguments JSON 文本
+    query: str               # 解析出的搜索词（parse_error 时为空串）
+    status: str
+    results: str = "[]"
+    inject_tokens: int | None = None
+    latency_ms: float | None = None
+    error: str | None = None
+
+
+@dataclass
+class ToolCall:
+    id: int
+    session_id: int
+    trigger_message_id: int
+    name: str
+    arguments: str
+    query: str
+    status: str
+    results: str
+    inject_tokens: int | None
+    latency_ms: float | None
+    error: str | None
     created_at: float

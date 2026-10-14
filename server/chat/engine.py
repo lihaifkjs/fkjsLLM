@@ -1,4 +1,4 @@
-"""对话编排：上下文拼接（滑窗 / 摘要压缩）、停止转发。
+"""对话编排：上下文拼接（滑窗 / 摘要压缩）、工具调用循环（M9）、停止转发。
 
 不知道 HTTP，也不直接碰模型实例——只经 model_manager 推理；
 会话/消息/压缩记录持久化委托 session_store，自身只保留运行态
@@ -7,23 +7,31 @@
 import json
 import threading
 from dataclasses import dataclass, fields
-from typing import Iterator
+from typing import Any, Iterator
 
 from chat.context import (SUMMARY_PREFIX, fit_window, render_rag_segment,
-                          render_summary_request, split_overflow, strip_think)
+                          render_summary_request, render_tool_prompt_suffix,
+                          render_tool_response, split_overflow, strip_think)
 from config import SamplingParams, config
 from model_manager.manager import GenerateResult, ServiceError, model_manager
 from params.presets import snapshot as params_snapshot
 from rag.retriever import search as rag_search
 from session_store.base import (Compression, CompressionInput, Message,
-                                MessageObservability, RetrievalInput)
+                                MessageObservability, RetrievalInput,
+                                ToolCallInput)
 from session_store.sqlite_store import session_store
+from tools.parser import ToolCallDetector, parse_tool_call
+from tools.search import WEB_SEARCH_TOOLS, web_search
 
 DEFAULT_TITLE = "新会话"
 TITLE_LEN = 20  # 一期标题取首条消息前 20 字（PRD 3.2 简化）
 # 手动压缩的 trigger_message_id 哨兵：无对应消息（id 从 1 自增），
 # 也不会命中调用链的 get_compression_by_trigger 查询
 MANUAL_TRIGGER_ID = 0
+
+# 流事件（M9）：("token", 文本) 逐字下发；("tool_call", {name, query})
+# 工具调用中间态。api 层据此分发 SSE 事件类型
+StreamItem = tuple[str, Any]
 
 
 @dataclass
@@ -42,10 +50,12 @@ class ChatEngine:
     # ---------- 对话 ----------
 
     def chat(self, session_id: int | None,
-             content: str) -> tuple[ChatMeta, Iterator[str], GenerateResult]:
-        """登记用户消息并返回 (meta, token 迭代器, 结果回填对象)。
+             content: str) -> tuple[ChatMeta, Iterator[StreamItem], GenerateResult]:
+        """登记用户消息并返回 (meta, 流事件迭代器, 结果回填对象)。
 
         迭代器消费完毕（含被停止）时，把已生成的部分 assistant 消息落库。
+        会话开启 tool_enabled（M9）时走工具调用循环（决策轮→搜索→回答轮），
+        否则单次生成。
         """
         with self._lock:
             if session_id is None:
@@ -72,8 +82,100 @@ class ChatEngine:
                             title=session.title)
 
         result = GenerateResult()
-        tokens = model_manager.generate(prompt, params, result)
-        return meta, self._wrap(assistant_msg, tokens, result, snapshot), result
+        if session.tool_enabled:
+            events = self._chat_with_tools(
+                session.id, assistant_msg.id, prompt, params, result)
+        else:
+            tokens = model_manager.generate(prompt, params, result)
+            events = (("token", t) for t in tokens)
+        return meta, self._wrap(assistant_msg, events, result, snapshot), result
+
+    # ---------- 工具调用循环（M9，单次搜索无链式，决策 D） ----------
+
+    def _chat_with_tools(self, session_id: int, trigger_message_id: int,
+                         prompt: list[dict], params: SamplingParams,
+                         result: GenerateResult) -> Iterator[StreamItem]:
+        """决策轮（带 tools + /no_think）→ 命中则搜索 → 回答轮（摘 tools）。
+
+        result 回填最终一轮的观测数据：无工具调用时决策轮即最终轮。
+        tool_call 标记不入 messages 表（决策 K），原文与结果快照落
+        tool_calls 表供调用链观测。
+        """
+        msgs = self._tool_round_messages(prompt, params)
+        detector = ToolCallDetector()
+        decision_result = GenerateResult()
+        decision_parts: list[str] = []
+        for chunk in model_manager.generate(msgs, params, decision_result,
+                                            tools=WEB_SEARCH_TOOLS):
+            decision_parts.append(chunk)
+            out = detector.feed(chunk)
+            if out:
+                yield ("token", out)
+        raw, leftover = detector.finish()
+        if leftover:
+            yield ("token", leftover)
+
+        if raw is None:  # 模型判断无需搜索：决策轮即最终回答
+            self._copy_result(decision_result, result)
+            return
+
+        full_text = "".join(decision_parts)
+        parsed = parse_tool_call(raw)
+        if not parsed.valid or parsed.name != "web_search" or not parsed.query:
+            # 解析失败兜底（决策 I）：落 parse_error，原文回吐当普通文本
+            session_store.add_tool_call(ToolCallInput(
+                session_id=session_id, trigger_message_id=trigger_message_id,
+                name=parsed.name or "web_search", arguments=parsed.arguments,
+                query=parsed.query, status="parse_error",
+                error="tool_call JSON 解析失败或参数缺失"))
+            yield ("token", full_text)
+            self._copy_result(decision_result, result)
+            return
+
+        yield ("tool_call", {"name": parsed.name, "query": parsed.query})
+        outcome = web_search(parsed.query)
+        if outcome.error is not None:
+            status = "search_error"
+            response_text = f"搜索失败：{outcome.error}"  # 喂回模型向用户说明
+        else:
+            status = "success"
+            response_text = render_tool_response(
+                outcome.results, config.tool_inject_max_tokens,
+                model_manager.count_tokens)
+        session_store.add_tool_call(ToolCallInput(
+            session_id=session_id, trigger_message_id=trigger_message_id,
+            name=parsed.name, arguments=parsed.arguments, query=parsed.query,
+            status=status,
+            results=json.dumps(outcome.results, ensure_ascii=False),
+            inject_tokens=model_manager.count_tokens(response_text),
+            latency_ms=outcome.latency_ms, error=outcome.error))
+
+        round2 = msgs + [
+            {"role": "assistant", "content": full_text},
+            # Qwen3 模板把 tool 角色包成 user + <tool_response>（spike 实测）
+            {"role": "tool", "content": response_text},
+        ]
+        for chunk in model_manager.generate(round2, params, result):
+            yield ("token", chunk)
+
+    @staticmethod
+    def _tool_round_messages(prompt: list[dict],
+                             params: SamplingParams) -> list[dict]:
+        """决策轮 messages：system 尾追加工具提示段（决策 L），当前 user
+        追加 /no_think（决策 E：保证输出形态可判别）。不改原 prompt。"""
+        msgs = [dict(m) for m in prompt]
+        suffix = render_tool_prompt_suffix()
+        if params.system_prompt and msgs and msgs[0]["role"] == "system":
+            msgs[0]["content"] = msgs[0]["content"] + "\n\n" + suffix
+        else:
+            msgs.insert(0, {"role": "system", "content": suffix})
+        msgs[-1]["content"] = msgs[-1]["content"] + " /no_think"
+        return msgs
+
+    @staticmethod
+    def _copy_result(src: GenerateResult, dst: GenerateResult):
+        for f in fields(GenerateResult):
+            setattr(dst, f.name, getattr(src, f.name))
 
     def _build_prompt(self, session_id: int,
                       exclude_message_id: int
@@ -268,13 +370,14 @@ class ChatEngine:
             raise ServiceError("COMPRESSION_FAILED", "压缩失败，请重试")
         return session_store.get_latest_compression(session_id)
 
-    def _wrap(self, assistant_msg: Message, tokens: Iterator[str],
-              result: GenerateResult, snapshot: str) -> Iterator[str]:
+    def _wrap(self, assistant_msg: Message, events: Iterator[StreamItem],
+              result: GenerateResult, snapshot: str) -> Iterator[StreamItem]:
         parts: list[str] = []
         try:
-            for text in tokens:
-                parts.append(text)
-                yield text
+            for kind, payload in events:
+                if kind == "token":
+                    parts.append(payload)
+                yield (kind, payload)
         finally:
             # 正常结束与被停止都走到这里：部分结果与观测数据落库
             session_store.update_message(

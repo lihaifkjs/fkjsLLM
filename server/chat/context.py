@@ -26,6 +26,10 @@ SUMMARY_MAX_CHARS = 400
 # RAG 检索结果注入主上下文时的段前缀（独立 system 段，M7 决策 E）
 RAG_PREFIX = "以下是知识库中与当前问题相关的内容（供参考）：\n"
 
+# M9 工具提示段：渲染期注入 system prompt 尾部（不写回 params，决策 L）；
+# 措辞对齐 spikes/tool_calling_baseline.json 的验证基线
+TOOL_SUFFIX_TMPL = "当前日期 {date}，你可以使用 web_search 工具获取实时信息。"
+
 _THINK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 
 
@@ -115,3 +119,27 @@ def render_summary_request(prev_summary: str,
 def strip_think(text: str) -> str:
     """剥离 Qwen3 think 块；压缩输出只要正文。"""
     return _THINK_RE.sub("", text).strip()
+
+
+def render_tool_prompt_suffix() -> str:
+    """M9：工具提示段（含当天日期），注入决策轮 system prompt 尾部。"""
+    from datetime import date
+    return TOOL_SUFFIX_TMPL.format(date=date.today().isoformat())
+
+
+def render_tool_response(results: list[dict], max_tokens: int,
+                         count_tokens: Callable[[str], int]) -> str:
+    """搜索结果渲染为 tool 角色消息内容（M9）。
+
+    正文（content）优先、snippet 兜底；按序累加，超 max_tokens 丢后续
+    结果（上下文膨胀防护，PRD §8）；一个都放不下返回占位说明。
+    """
+    parts: list[str] = []
+    for i, r in enumerate(results, 1):
+        body = r.get("content") or r.get("snippet") or ""
+        block = f"[{i}] {r['title']}\n{r['url']}\n{body}".rstrip()
+        candidate = "\n\n".join(parts + [block])
+        if count_tokens(candidate) > max_tokens:
+            break
+        parts.append(block)
+    return "\n\n".join(parts) if parts else "搜索无结果"
