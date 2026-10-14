@@ -29,6 +29,15 @@ async function onToggle() {
     ElMessage.error((e as ApiError).message ?? '操作失败')
   }
 }
+
+async function onSelectModel(modelId: string) {
+  try {
+    await modelStore.selectModel(modelId)
+  } catch (e) {
+    ElMessage.error((e as ApiError).message ?? '切换模型失败')
+    await modelStore.refresh()
+  }
+}
 </script>
 
 <template>
@@ -43,6 +52,21 @@ async function onToggle() {
       显存 {{ modelStore.status.vram_used_mb }} MB
     </span>
     <span v-if="modelStore.state === 'error'" class="error-text">{{ modelStore.status.error }}</span>
+    <el-select
+      v-if="modelStore.availableModels.length > 1"
+      :model-value="modelStore.selectedModelId ?? modelStore.status.model_id"
+      size="small"
+      class="model-select"
+      :disabled="modelStore.busy"
+      @change="onSelectModel"
+    >
+      <el-option
+        v-for="m in modelStore.availableModels"
+        :key="m.id"
+        :label="m.name"
+        :value="m.id"
+      />
+    </el-select>
     <el-button
       size="small"
       :type="modelStore.loaded ? 'danger' : 'primary'"
@@ -64,6 +88,9 @@ async function onToggle() {
 .vram {
   color: #909399;
   font-size: 13px;
+}
+.model-select {
+  width: 180px;
 }
 .error-text {
   color: #f56c6c;

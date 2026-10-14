@@ -5,6 +5,20 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+# M8：可加载模型注册表。原版 Qwen3-14B + 身份微调版 fkjs-14B，
+# POST /api/model/load 可选 model_id 切换（切换 = unload 后再 load）。
+MODELS: dict[str, dict] = {
+    "qwen3-14b": {
+        "path": str(PROJECT_ROOT / "Qwen3-14B-Q4_K_M.gguf"),
+        "name": "Qwen3-14B 原版",
+    },
+    "fkjs-14b": {
+        "path": str(PROJECT_ROOT / "fkjs-14b-q4_k_m.gguf"),
+        "name": "fkjs-14B（身份微调）",
+    },
+}
+DEFAULT_MODEL_ID = "qwen3-14b"
+
 
 @dataclass(frozen=True)
 class SamplingParams:
@@ -25,8 +39,6 @@ class SamplingParams:
 @dataclass(frozen=True)
 class Config:
     # 当前装的是 CPU 版 llama-cpp-python，必须 0；换 CUDA 版后改 -1 全量 offload
-    model_path: str = os.getenv(
-        "MODEL_PATH", str(PROJECT_ROOT / "Qwen3-14B-Q4_K_M.gguf"))
     n_gpu_layers: int = int(os.getenv("N_GPU_LAYERS", "0"))
     n_ctx: int = 8192
     host: str = "0.0.0.0"

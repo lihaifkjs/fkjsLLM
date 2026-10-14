@@ -9,8 +9,8 @@
 - [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）/ 手动压缩端点（批次4）。M7 新增 RAG 知识库：三表 + sessions.rag_enabled（user_version 4）/ rag 模块（fastembed embedding、切块、检索）/ knowledge 三端点 / 检索注入编排与调用链 retrieval 观测。`LOG_PROMPT=0` 关闭终端 prompt 拦截打印。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优、M7 embedding 选型）。
-- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识 + M7 知识库管理页 /knowledge 与会话检索开关 / TracePane 检索区块；默认 mock 接口层，启动 `cd web && npm run dev`。
+- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）/ 手动压缩端点（批次4）。M7 新增 RAG 知识库：三表 + sessions.rag_enabled（user_version 4）/ rag 模块（fastembed embedding、切块、检索）/ knowledge 三端点 / 检索注入编排与调用链 retrieval 观测。`LOG_PROMPT=0` 关闭终端 prompt 拦截打印。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优、M7 embedding 选型）。M8 新增 `server/finetune/`（数据管线 + 双端训练脚本，训练记录 `training_record_m8.md`）与多模型注册表：`config.MODELS`（qwen3-14b 原版 / fkjs-14b 微调版，GGUF 均在仓库根目录不入 git），`POST /api/model/load` 可选 `model_id` 切换，status 下发 `model_id`/`available_models`。
+- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识 + M7 知识库管理页 /knowledge 与会话检索开关 / TracePane 检索区块 + M8 顶栏模型选择器（available_models el-select，已加载切换 = unload→load）；默认 mock 接口层，启动 `cd web && npm run dev`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
@@ -30,7 +30,8 @@
 - [M7开发计划](docs/M7开发计划.md)：M7 RAG 知识库开发计划（2026-10-11 精简版，只做核心链路）——documents/chunks/retrievals 三表（user_version 4）/ bge-small-zh embedding（CPU）/ 检索注入编排 / /knowledge 极简管理页（无详情页）/ 会话级开关 / 调用链检索观测，含决策记录（A–K）与风险坑点。已确认：pdf 不做、单知识库。**M7 已竣工**。
 - [后端m7实现](docs/后端m7实现.md)：M7 后端实现说明——fastembed 选型与 spike 定值（阈值 0.40 区间依据）/ rag 模块四件套 / 检索注入编排与降级 / retrievals 快照语义 / observability retrieval 两态，含生产库提前迁移事件记录。
 - [前端m7实现](docs/前端m7实现.md)：M7 前端实现说明——KnowledgeView 管理页 / 会话开关（PATCH 失败回弹）/ TracePane 检索区块 / mock 最小桩；浏览器实测未做（从简决策）。
-- [M8开发计划](docs/M8开发计划.md)：M8 身份微调（QLoRA）开发计划——身份设定（fkjs/lihai 基于 Qwen）/ 数据集配比与 replay 防遗忘 / 双端工具链（Mac mlx-lm 验证数据有效性 → Windows 4070Ti transformers+peft+trl 正式训练）/ GGUF 转换接入第二模型条目 / 对照实验与 tool calling 回归验证，含决策记录（A–F）与风险坑点。
+- [M8开发计划](docs/M8开发计划.md)：M8 身份微调（QLoRA）开发计划——身份设定（fkjs/lihai 基于 Qwen）/ 数据集配比与 replay 防遗忘 / 双端工具链（Mac mlx-lm 验证数据有效性 → Windows 4070Ti transformers+peft+trl 正式训练）/ GGUF 转换接入第二模型条目 / 对照实验与 tool calling 回归验证，含决策记录（A–F）与风险坑点。**M8 已竣工**。
+- [后端m8实现](docs/后端m8实现.md)：M8 实现说明——finetune 数据管线七脚本/Windows 训练结论（lr 2e-4×4ep、checkpoint-150、留出 37/37）/验收数据（身份 8/8、tool 回归 100%）/多模型注册表接入（config.MODELS + load model_id + 前端选择器），含坑点（Metal 崩溃、低 lr 欠训练假阴性）。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。

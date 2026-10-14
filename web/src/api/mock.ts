@@ -164,6 +164,12 @@ function persistParams() {
 let modelState: ModelState = 'unloaded'
 let modelError: string | null = null
 let generating = false
+// M8 最小桩：仅记录选中的模型条目，供 status 下发与选择器渲染
+let modelId = 'qwen3-14b'
+const AVAILABLE_MODELS = [
+  { id: 'qwen3-14b', name: 'Qwen3-14B 原版' },
+  { id: 'fkjs-14b', name: 'fkjs-14B（身份微调）' },
+]
 // 生成中的 assistant 消息 id：观测数据尚未落库，getObservability 对它返回全 null（对齐后端时序）
 let generatingMessageId: number | null = null
 
@@ -176,6 +182,8 @@ const status = (): ModelStatus => ({
   vram_used_mb: modelState === 'loaded' ? 10500 : null,
   error: modelError,
   n_ctx: MODEL_N_CTX,
+  model_id: modelId,
+  available_models: AVAILABLE_MODELS,
 })
 
 // 非法迁移对齐契约：409 + { code, message }；mock 里以 reject ApiError 表示
@@ -694,8 +702,9 @@ export const api: LlmApi = {
     }
   },
   getModelStatus: async () => status(),
-  loadModel: async () => {
+  loadModel: async (newModelId?: string) => {
     if (modelState !== 'unloaded' && modelState !== 'error') throw conflict('当前状态不允许加载')
+    if (newModelId) modelId = newModelId
     modelState = 'loading'
     modelError = null
     await delay(LOAD_MS)

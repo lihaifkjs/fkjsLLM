@@ -88,6 +88,7 @@ export const api: LlmApi = {
   getParams: () => request<InferenceParams>('/params'),
   saveParams: (patch) => request<InferenceParams>('/params', jsonInit('PUT', patch)),
   getModelStatus: () => request<ModelStatus>('/model/status'),
-  loadModel: () => request<ModelStatus>('/model/load', { method: 'POST' }),
+  loadModel: (modelId) =>
+    request<ModelStatus>('/model/load', jsonInit('POST', modelId ? { model_id: modelId } : {})),
   unloadModel: () => request<ModelStatus>('/model/unload', { method: 'POST' }),
 }

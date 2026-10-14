@@ -12,7 +12,7 @@ from typing import Iterator
 
 from llama_cpp import Llama, llama_cpp
 
-from config import SamplingParams, config
+from config import MODELS, DEFAULT_MODEL_ID, SamplingParams, config
 from model_manager import prompt_render
 
 
@@ -86,6 +86,8 @@ class ModelStatus:
     vram_used_mb: int | None = None  # CPU 版无法读取，恒为 None
     error: str | None = None
     generating: bool = False
+    # 当前选定的模型条目（未加载时也记忆，供下次 load 缺省使用）
+    model_id: str = DEFAULT_MODEL_ID
 
 
 class ModelManager:
@@ -100,6 +102,7 @@ class ModelManager:
         self._error: str | None = None
         self._llm: Llama | None = None
         self._stop_event: threading.Event | None = None
+        self._model_id = DEFAULT_MODEL_ID
 
     # ---------- 状态查询 ----------
 
@@ -109,6 +112,7 @@ class ModelManager:
                 state=self._state,
                 error=self._error,
                 generating=self._stop_event is not None,
+                model_id=self._model_id,
             )
 
     def _set_state(self, state: ModelState, error: str | None = None):
@@ -118,20 +122,26 @@ class ModelManager:
 
     # ---------- 加载 / 卸载 ----------
 
-    def load(self) -> ModelState:
+    def load(self, model_id: str | None = None) -> ModelState:
         with self._lock:
             if self._state not in (ModelState.UNLOADED, ModelState.ERROR):
                 raise ServiceError(
                     "INVALID_STATE", f"当前状态 {self._state} 不能加载")
+            if model_id is not None and model_id not in MODELS:
+                raise ServiceError(
+                    "UNKNOWN_MODEL", f"未知模型条目 {model_id}")
+            self._model_id = model_id or self._model_id
             self._state = ModelState.LOADING
             self._error = None
-        threading.Thread(target=self._load_worker, daemon=True).start()
+            model_path = MODELS[self._model_id]["path"]
+        threading.Thread(
+            target=self._load_worker, args=(model_path,), daemon=True).start()
         return ModelState.LOADING
 
-    def _load_worker(self):
+    def _load_worker(self, model_path: str):
         try:
             llm = Llama(
-                model_path=config.model_path,
+                model_path=model_path,
                 n_gpu_layers=config.n_gpu_layers,
                 n_ctx=config.n_ctx,
                 verbose=False,

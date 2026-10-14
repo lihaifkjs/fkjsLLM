@@ -118,6 +118,14 @@ export interface ModelStatus {
   error: string | null
   // 仅 GET /api/model/status 返回（load/unload 响应不含），前端算上下文预算用
   n_ctx?: number
+  // M8：当前选定模型条目与可选列表（多模型注册表）
+  model_id?: string
+  available_models?: ModelInfo[]
+}
+
+export interface ModelInfo {
+  id: string
+  name: string
 }
 
 // ---------- 观测数据（M5，docs/M5开发计划.md §4.2） ----------
@@ -235,6 +243,6 @@ export interface LlmApi {
   // 时传入，勿传 'custom'（后端视为未知预设，400 INVALID_PARAMS）
   saveParams: (patch: Partial<InferenceParams>) => Promise<InferenceParams>
   getModelStatus: () => Promise<ModelStatus>
-  loadModel: () => Promise<ModelStatus>
+  loadModel: (modelId?: string) => Promise<ModelStatus>
   unloadModel: () => Promise<ModelStatus>
 }
