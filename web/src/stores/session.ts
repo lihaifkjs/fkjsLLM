@@ -17,13 +17,16 @@ export const useSessionStore = defineStore('session', () => {
   const summaryCoveredUpto = ref<number | null>(null)
   // M7：当前会话的知识库检索开关（新建会话默认关）
   const ragEnabled = ref(false)
+  // M9：当前会话的网页搜索工具开关（新建会话默认关）
+  const toolEnabled = ref(false)
 
-  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null, rag: boolean = false) {
+  function select(id: number | null, sessionTitle: string, msgs: ChatMessage[], coveredUpto: number | null = null, rag: boolean = false, tool: boolean = false) {
     sessionId.value = id
     title.value = sessionTitle
     messages.value = msgs
     summaryCoveredUpto.value = coveredUpto
     ragEnabled.value = rag
+    toolEnabled.value = tool
   }
 
   // 列表项提到最前（列表按 updated_at 倒序，最新消息的会话排第一）
@@ -51,14 +54,15 @@ export const useSessionStore = defineStore('session', () => {
       title: session.title,
       updated_at: session.updated_at,
       rag_enabled: session.rag_enabled,
+      tool_enabled: session.tool_enabled,
     })
-    select(session.id, session.title, [], null, session.rag_enabled)
+    select(session.id, session.title, [], null, session.rag_enabled, session.tool_enabled)
   }
 
   async function openSession(id: number) {
     const resp = await api.getSessionMessages(id)
     const summary = sessions.value.find((s) => s.id === id)
-    select(id, summary?.title ?? DEFAULT_TITLE, resp.messages, resp.summary_covered_upto, summary?.rag_enabled ?? false)
+    select(id, summary?.title ?? DEFAULT_TITLE, resp.messages, resp.summary_covered_upto, summary?.rag_enabled ?? false, summary?.tool_enabled ?? false)
   }
 
   // M7：切换当前会话的知识库检索开关，列表项同步
@@ -68,6 +72,15 @@ export const useSessionStore = defineStore('session', () => {
     ragEnabled.value = enabled
     const item = sessions.value.find((s) => s.id === sessionId.value)
     if (item) item.rag_enabled = enabled
+  }
+
+  // M9：切换当前会话的网页搜索工具开关，列表项同步（失败回弹同款）
+  async function setToolEnabled(enabled: boolean) {
+    if (sessionId.value === null) return
+    await api.setToolEnabled(sessionId.value, enabled)
+    toolEnabled.value = enabled
+    const item = sessions.value.find((s) => s.id === sessionId.value)
+    if (item) item.tool_enabled = enabled
   }
 
   // 一轮对话结束后刷新摘要覆盖范围（本轮可能触发了压缩）；只更新游标，不动消息列表
@@ -108,12 +121,13 @@ export const useSessionStore = defineStore('session', () => {
     if (sessions.value.some((s) => s.id === meta.session_id)) {
       bumpSummary(meta.session_id, { title: meta.title, updated_at: Date.now() / 1000 })
     } else {
-      // 此前未建会话（首条消息直接开聊）：新会话检索开关默认关
+      // 此前未建会话（首条消息直接开聊）：新会话检索/工具开关默认关
       sessions.value.unshift({
         id: meta.session_id,
         title: meta.title,
         updated_at: Date.now() / 1000,
         rag_enabled: false,
+        tool_enabled: false,
       })
     }
   }
@@ -157,11 +171,13 @@ export const useSessionStore = defineStore('session', () => {
     messages,
     summaryCoveredUpto,
     ragEnabled,
+    toolEnabled,
     loadSessions,
     createSession,
     openSession,
     refreshCoverage,
     setRagEnabled,
+    setToolEnabled,
     rename,
     remove,
     handleSessionGone,

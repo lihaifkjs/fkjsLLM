@@ -13,6 +13,8 @@ export function useChatStream() {
   const streaming = ref(false)
   const tokensPerSec = ref(0)
   const lastUsage = ref<Usage | null>(null)
+  // M9：工具调用中间态（tool_call 事件置位，回答轮首个 token 到达清除）
+  const searchQuery = ref<string | null>(null)
 
   let handle: ChatStreamHandle | null = null
   let assistantMessage: ChatMessage | null = null
@@ -23,6 +25,7 @@ export function useChatStream() {
 
   function cleanup() {
     streaming.value = false
+    searchQuery.value = null
     handle = null
     assistantMessage = null
     frameBuffer = []
@@ -55,12 +58,16 @@ export function useChatStream() {
           frameBuffer = []
         },
         onToken: (token) => {
+          searchQuery.value = null  // 回答轮 token 到达即搜索中间态结束
           if (assistantMessage) sessionStore.appendToken(assistantMessage, token.text)
           tokenFrames++
           const nowSec = Date.now() / 1000
           if (firstTokenAt === null) firstTokenAt = nowSec
           const elapsed = nowSec - firstTokenAt
           if (elapsed > 0) tokensPerSec.value = Math.round((tokenFrames / elapsed) * 10) / 10
+        },
+        onToolCall: (toolCall) => {
+          searchQuery.value = toolCall.query
         },
         onDone: (done) => {
           lastUsage.value = done.usage
@@ -91,5 +98,5 @@ export function useChatStream() {
     cleanup()
   }
 
-  return { streaming, tokensPerSec, lastUsage, send, stop }
+  return { streaming, tokensPerSec, lastUsage, searchQuery, send, stop }
 }

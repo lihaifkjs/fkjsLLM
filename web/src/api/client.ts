@@ -45,6 +45,9 @@ function chat(req: ChatRequest, cb: ChatStreamCallbacks): ChatStreamHandle {
         case 'token':
           cb.onToken(data as never)
           break
+        case 'tool_call':
+          cb.onToolCall?.(data as never)
+          break
         case 'done':
           cb.onDone(data as never)
           break
@@ -74,6 +77,8 @@ export const api: LlmApi = {
     request<CompressionRecord>(`/sessions/${sessionId}/compress`, { method: 'POST' }),
   setRagEnabled: (sessionId, enabled) =>
     request<Session>(`/sessions/${sessionId}`, jsonInit('PATCH', { rag_enabled: enabled })),
+  setToolEnabled: (sessionId, enabled) =>
+    request<Session>(`/sessions/${sessionId}`, jsonInit('PATCH', { tool_enabled: enabled })),
   listDocuments: () => request<KnowledgeDocument[]>('/knowledge/documents'),
   uploadDocument: (file) => {
     const form = new FormData()

@@ -124,6 +124,8 @@ try {
       s.coveredUpto ??= null
       // M7 前的老存档归一化
       s.rag_enabled ??= false
+      // M9 前的老存档归一化
+      s.tool_enabled ??= false
       for (const c of s.compressions) {
         nextCompressionId = Math.max(nextCompressionId, c.id + 1)
       }
@@ -317,6 +319,26 @@ function buildObservability(session: StoredSession, assistantIndex: number): Obs
           latency_ms: 12.5,
         }
       : null,
+    // M9 最小桩：会话开了搜索开关就给一条固定假工具调用，不复刻真实搜索行为
+    tool_call: session.tool_enabled
+      ? {
+          name: 'web_search',
+          arguments: { query: current.content },
+          query: current.content,
+          status: 'success' as const,
+          results: [
+            {
+              title: '苹果遭遇重大泄密!新一代 iPhone 售价提前曝光',
+              url: 'https://www.163.com/dy/article/mock',
+              snippet: '跨国电信运营商沃达丰先后短暂上线了 iPhone 18 系列的价格页面。（mock 搜索结果）',
+              content: null,
+            },
+          ],
+          inject_tokens: 96,
+          latency_ms: 830,
+          error: null,
+        }
+      : null,
     // 压缩三态：本消息触发（完整记录）/ 复用既有摘要 / 无
     compression: active
       ? active.triggerMessageId === assistant.id
@@ -352,6 +374,7 @@ function nullObservability(): Observability {
     prompt_messages: null,
     compression: null,
     retrieval: null,
+    tool_call: null,
   }
 }
 
@@ -440,6 +463,7 @@ function ensureSession(sessionId: number | null, content: string): StoredSession
     created_at: now(),
     updated_at: now(),
     rag_enabled: false,
+    tool_enabled: false,
     messages: [],
     compressions: [],
     coveredUpto: null,
@@ -554,7 +578,7 @@ export const api: LlmApi = {
   stopChat: async () => undefined,
   listSessions: async (): Promise<SessionSummary[]> =>
     [...sessions.values()]
-      .map(({ id, title, updated_at, rag_enabled }) => ({ id, title, updated_at, rag_enabled }))
+      .map(({ id, title, updated_at, rag_enabled, tool_enabled }) => ({ id, title, updated_at, rag_enabled, tool_enabled }))
       .sort((a, b) => b.updated_at - a.updated_at),
   createSession: async (title) => {
     const session: StoredSession = {
@@ -563,6 +587,7 @@ export const api: LlmApi = {
       created_at: now(),
       updated_at: now(),
       rag_enabled: false,
+      tool_enabled: false,
       messages: [],
       compressions: [],
       coveredUpto: null,
@@ -650,6 +675,15 @@ export const api: LlmApi = {
     const session = sessions.get(sessionId)
     if (!session) throw sessionNotFound(sessionId)
     session.rag_enabled = enabled
+    persistSessions()
+    const { messages: _messages, ...rest } = session
+    return rest
+  },
+  // M9 最小桩：开关可切换并持久化，不模拟搜索行为
+  setToolEnabled: async (sessionId, enabled) => {
+    const session = sessions.get(sessionId)
+    if (!session) throw sessionNotFound(sessionId)
+    session.tool_enabled = enabled
     persistSessions()
     const { messages: _messages, ...rest } = session
     return rest

@@ -22,6 +22,15 @@ const reuseId = computed(() =>
 // M7：知识库检索记录（未启用检索 / 开关后开的老消息为 null，不渲染区块）
 const retrieval = computed(() => observability.value?.retrieval ?? null)
 
+// M9：工具调用记录（未启用工具 / 本轮未触发为 null，不渲染区块）
+const toolCall = computed(() => observability.value?.tool_call ?? null)
+
+const TOOL_STATUS_TEXT = {
+  success: '成功',
+  search_error: '搜索失败（错误已喂回模型）',
+  parse_error: 'tool_call 解析失败（原文已回吐）',
+} as const
+
 // 压缩率 = 1 - 摘要/原文；source_tokens 缺失（老数据）时不展示
 const ratio = computed(() => {
   const r = record.value
@@ -68,6 +77,43 @@ const barPercent = computed(() => {
           :name="hit.chunk_id"
         >
           <div class="text-block">{{ hit.content }}</div>
+        </el-collapse-item>
+      </el-collapse>
+    </div>
+
+    <!-- M9：工具调用区块（null 不渲染；results 空数组表示无结果/失败） -->
+    <div v-if="toolCall" class="rag-section">
+      <div class="rag-title">网页搜索</div>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="工具">{{ toolCall.name }}</el-descriptions-item>
+        <el-descriptions-item label="搜索词">{{ toolCall.query || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          {{ TOOL_STATUS_TEXT[toolCall.status] }}
+          <span v-if="toolCall.error" class="tool-error">{{ toolCall.error }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="注入 tokens">
+          {{ toolCall.inject_tokens ?? '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="搜索耗时">
+          {{ toolCall.latency_ms != null ? `${Math.round(toolCall.latency_ms)}ms` : '—' }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <el-alert
+        v-if="toolCall.results.length === 0 && toolCall.status === 'success'"
+        class="rag-hits"
+        type="info"
+        :closable="false"
+        title="搜索无结果"
+      />
+      <el-collapse v-else-if="toolCall.results.length > 0" class="rag-hits">
+        <el-collapse-item
+          v-for="(result, i) in toolCall.results"
+          :key="i"
+          :title="`[${i + 1}] ${result.title}`"
+          :name="i"
+        >
+          <div class="text-block tool-url">{{ result.url }}</div>
+          <div class="text-block">{{ result.content ?? result.snippet }}</div>
         </el-collapse-item>
       </el-collapse>
     </div>
@@ -123,7 +169,7 @@ const barPercent = computed(() => {
       :title="`复用既有摘要 #${reuseId}（本轮未触发新压缩）`"
     />
     <el-empty
-      v-else-if="!retrieval"
+      v-else-if="!retrieval && !toolCall"
       description="无压缩记录（滑窗策略、未超限或上下文不足触发条件）"
     />
   </template>
@@ -145,6 +191,17 @@ const barPercent = computed(() => {
 }
 .rag-hits {
   margin-top: 8px;
+}
+.tool-error {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #f56c6c;
+}
+.tool-url {
+  color: #909399;
+  font-size: 12px;
+  margin-bottom: 4px;
+  word-break: break-all;
 }
 .ratio-hint {
   margin-left: 8px;

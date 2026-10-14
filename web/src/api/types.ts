@@ -40,7 +40,13 @@ export interface ApiError {
   message: string
 }
 
-export type ChatSseEvent = 'meta' | 'token' | 'done' | 'error'
+export type ChatSseEvent = 'meta' | 'token' | 'tool_call' | 'done' | 'error'
+
+// M9：工具调用中间态事件（开始搜索时下发；回答轮首个 token 到达即结束）
+export interface ToolCallEvent {
+  name: string
+  query: string
+}
 
 // 一帧原始 SSE 记录：time 为到达时刻（秒），data 为「data: 」后的原始字符串（不重新序列化，保真）
 export interface SseFrame {
@@ -54,6 +60,8 @@ export interface ChatStreamCallbacks {
   onToken: (token: ChatToken) => void
   onDone: (done: ChatDone) => void
   onError: (error: ApiError) => void
+  // M9：工具调用中间态（可选，mock 不触发）
+  onToolCall?: (toolCall: ToolCallEvent) => void
   // 可选：每一帧的原始记录，用于调试抽屉「原始输出」
   onFrame?: (frame: SseFrame) => void
 }
@@ -71,6 +79,8 @@ export interface SessionSummary {
   updated_at: number
   // M7：会话级知识库检索开关
   rag_enabled: boolean
+  // M9：会话级网页搜索工具开关
+  tool_enabled: boolean
 }
 
 export interface Session extends SessionSummary {
@@ -199,6 +209,29 @@ export interface Retrieval {
   latency_ms: number | null
 }
 
+// ---------- 网页搜索工具（M9，docs/M9开发计划.md §3） ----------
+
+// 搜索结果快照条目（tool_calls.results JSON）；content 为 trafilatura 正文（未抓时为 null）
+export interface ToolCallResult {
+  title: string
+  url: string
+  snippet: string
+  content: string | null
+}
+
+// 一轮工具调用的调用链记录；status: success / search_error / parse_error
+// arguments 为解析后的对象（parse_error 时为原始文本）
+export interface ToolCallRecord {
+  name: string
+  arguments: Record<string, unknown> | string
+  query: string
+  status: 'success' | 'search_error' | 'parse_error'
+  results: ToolCallResult[]
+  inject_tokens: number | null
+  latency_ms: number | null
+  error: string | null
+}
+
 // GET /sessions/{sid}/messages/{mid}/observability 出参；
 // user 消息或 M5 前的老消息各字段为 null，pane 据此降级到帧统计
 export interface Observability {
@@ -216,6 +249,8 @@ export interface Observability {
   // M7：知识库检索记录（会话启用检索且有落库 → 完整记录含无命中 hits:[]；
   // 未启用 / 开关后开的老消息 → null）
   retrieval: Retrieval | null
+  // M9：工具调用记录（会话启用工具且本轮触发 → 完整记录含失败态；否则 null）
+  tool_call: ToolCallRecord | null
 }
 
 // ---------- 统一 API 形状 ----------
@@ -234,6 +269,8 @@ export interface LlmApi {
   compressSession: (sessionId: number) => Promise<CompressionRecord>
   // M7：会话级知识库检索开关（PATCH 部分更新）
   setRagEnabled: (sessionId: number, enabled: boolean) => Promise<Session>
+  // M9：会话级网页搜索工具开关（PATCH 部分更新）
+  setToolEnabled: (sessionId: number, enabled: boolean) => Promise<Session>
   // M7：知识库文档管理
   listDocuments: () => Promise<KnowledgeDocument[]>
   uploadDocument: (file: File) => Promise<KnowledgeDocument>

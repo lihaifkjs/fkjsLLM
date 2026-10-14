@@ -24,7 +24,7 @@ const CTX_WARN_RATIO = 0.8
 const modelStore = useModelStore()
 const sessionStore = useSessionStore()
 const settingsStore = useSettingsStore()
-const { streaming, tokensPerSec, lastUsage, send, stop } = useChatStream()
+const { streaming, tokensPerSec, lastUsage, searchQuery, send, stop } = useChatStream()
 const router = useRouter()
 
 const listRef = ref<HTMLElement>()
@@ -80,6 +80,15 @@ async function onRagToggle(enabled: boolean) {
   }
 }
 
+// M9：网页搜索工具开关（同款回弹模式）
+async function onToolToggle(enabled: boolean) {
+  try {
+    await sessionStore.setToolEnabled(enabled)
+  } catch (e) {
+    ElMessage.error((e as ApiError).message ?? '切换网页搜索失败')
+  }
+}
+
 async function compressNow() {
   if (sessionStore.sessionId === null) return
   compressing.value = true
@@ -130,6 +139,14 @@ onBeforeUnmount(() => modelStore.stopPolling())
           />
           <span class="rag-label">知识库检索</span>
         </span>
+        <span class="rag-switch" title="开启后模型可自主调用网页搜索获取实时信息（360 搜索，无 key 抓取，偶发失败属预期）">
+          <el-switch
+            :model-value="sessionStore.toolEnabled"
+            :disabled="streaming || sessionStore.sessionId === null"
+            @change="onToolToggle"
+          />
+          <span class="rag-label">网页搜索</span>
+        </span>
         <el-button size="small" @click="router.push('/knowledge')">知识库</el-button>
         <el-button
           size="small"
@@ -151,9 +168,14 @@ onBeforeUnmount(() => modelStore.stopPolling())
         <div ref="listRef" class="message-list">
           <el-empty v-if="sessionStore.messages.length === 0" description="加载模型后开始对话" />
           <MessageBubble
-            v-for="message in sessionStore.messages"
+            v-for="(message, i) in sessionStore.messages"
             :key="message.id"
             :message="message"
+            :searching="
+              searchQuery !== null && i === sessionStore.messages.length - 1
+                ? searchQuery
+                : null
+            "
             :compressed="
               sessionStore.summaryCoveredUpto !== null &&
               message.id > 0 &&

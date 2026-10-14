@@ -9,7 +9,12 @@ import 'highlight.js/styles/github.css'
 import type { ChatMessage } from '../api'
 import { splitThink } from '../utils/think'
 
-const props = defineProps<{ message: ChatMessage; compressed?: boolean }>()
+const props = defineProps<{
+  message: ChatMessage
+  compressed?: boolean
+  // M9：正在执行的网页搜索词（仅流式中的最后一条气泡传入）
+  searching?: string | null
+}>()
 const emit = defineEmits<{ openDebug: [message: ChatMessage] }>()
 
 const bodyRef = ref<HTMLElement>()
@@ -57,6 +62,8 @@ watch(
         <div v-show="thinkOpen" class="think-body">{{ parts.thinking }}</div>
       </div>
       <div ref="bodyRef" class="markdown-body" v-html="rendered" />
+      <!-- M9：工具调用中间态（搜索执行中，回答轮 token 到达后由父组件撤掉） -->
+      <div v-if="searching" class="searching-tag">正在搜索：{{ searching }}…</div>
       <div v-if="message.role === 'assistant'" class="bubble-actions">
         <el-button link size="small" @click="emit('openDebug', message)">调试</el-button>
       </div>
@@ -95,6 +102,18 @@ watch(
   font-size: 11px;
   color: #909399;
   margin-bottom: 4px;
+}
+/* M9 搜索中间态：呼吸闪烁提示进行中 */
+.searching-tag {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 6px;
+  animation: searching-pulse 1.2s ease-in-out infinite;
+}
+@keyframes searching-pulse {
+  50% {
+    opacity: 0.4;
+  }
 }
 .bubble-actions {
   text-align: right;
