@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-10-14T16:30:13+0800",
+  "search": {
+    "cases": [
+      {
+        "query": "最新一代 iPhone 的价格",
+        "ok": true,
+        "count": 5,
+        "latency_s": 0.66,
+        "sample": [
+          {
+            "title": "苹果遭遇重大泄密!新一代 iPhone 售价提前曝光|国行|沃达丰|苹果公司|iphone|全场景新品发布会_网易订阅",
+            "url": "https://www.163.com/dy/article/L6E09NK30519QQUP.html?spss=dy_author",
+            "snippet": "2026年9月9日 - 9月4日,跨国电信运营商沃达丰在埃及和澳大利亚的分支网站,先后短暂上线了iPhone 18系列的价格页面。.这个价格对比此前的市场传闻,令人安心不少..."
+          },
+          {
+            "title": "【苹果新款手机】价格_图片_品牌_怎么样-京东商城",
+            "url": "https://www.jd.com/chanpin/470783.html",
+            "snippet": "京东JD.COM是国内专业的苹果新款手机网上购物商城,提供苹果新款手机价格,报价,参数,评价,图片,品牌等信息.买苹果新款手机,上京东就购了. 你好,请登录免费注册我的订单◇ 我..."
+          }
+        ],
+        "snippet_chars": [
+          89,
+          92,
+          0,
+          0,
+          90
+        ]
+      },
+      {
+        "query": "2026年诺贝尔文学奖得主",
+        "ok": true,
+        "count": 4,
+        "latency_s": 0.45,
+        "sample": [
+          {
+            "title": "诺贝尔文学奖得主莫言先生,2026年1月8日造访天津大学冯骥 - 今日头条",
+            "url": "https://www.toutiao.com/video/7593268798715592745/",
+            "snippet": "2026年1月9日 - 消息发布登录展开诺贝尔文学奖得主莫言先生,2026年1月8日造访天津大学冯骥.本土另一位诺贝尔奖获得者——屠呦呦先生,她对人类的贡献是挽救和保护生命..."
+          },
+          {
+            "title": "2026年1月8日,诺贝尔文学奖得主莫言专程跑到天津大学,去看望老朋友冯骥才,顺便逛了逛冯骥才博物馆。 这次其实是莫言时隔20年重返天津大学。当年2005...",
+            "url": "https://www.toutiao.com/w/1853949215929419/",
+            "snippet": "2026年1月11日 - 年1月8日,诺贝尔文学奖得主莫言专程跑到天津大学,去看望老朋友冯骥才,顺便逛了逛冯骥才博物馆。"
+          }
+        ],
+        "snippet_chars": [
+          89,
+          60,
+          0,
+          0
+        ]
+      },
+      {
+        "query": "llama.cpp 最新版本号",
+        "ok": false,
+        "count": 0,
+        "latency_s": 0.36,
+        "sample": [],
+        "snippet_chars": []
+      }
+    ]
+  },
+  "extract": {
+    "cases": []
+  },
+  "model": {
+    "prompt_deviation": {
+      "with_tools_prompt_tokens": 187,
+      "render_prompt_no_tools_tokens": 47,
+      "diff": 140
+    },
+    "decision_round": {
+      "has_tool_call": true,
+      "raw": "{\"name\": \"web_search\", \"arguments\": {\"query\": \"最新一代 iPhone 的价格\"}}",
+      "content_snippet": "<think>\n\n</think>\n\n<tool_call>\n{\"name\": \"web_search\", \"arguments\": {\"query\": \"最新一代 iPhone 的价格\"}}\n</tool_call>"
+    },
+    "tool_role_render": {
+      "tool_response_wrapped_as": "user",
+      "block_snippet": "<|im_start|>user\n<tool_response>\n\n</tool_response>"
+    },
+    "answer_round": {
+      "answer": "<think>\n\n</think>\n\n截至2026年10月，最新一代的iPhone是iPhone 15系列，其价格如下：\n\n1. **iPhone 15**（基础款）：\n   - 起售价为 **799美元**（约合人民币5700元）。\n\n2. **iPhone 15 Plus**（大屏版）：\n   - 起售价为 **899美元**（约合人民币6300元）。\n\n3. **iPhone 15 Pro**（高端款）：\n   - 起售价为 **1099美元**（约合人民币7700元）。\n\n4. **iPhone 15 Pro Max**（旗舰款）：\n   - 起售价为 **1199美元**（约合人民币8400元）。\n\n这些价格为美国市场官方起售价，不同国家和地区的售价可能因税费、汇率和运营商套餐等因素有所不同。此外，如果选择存储容量更大的版本（如256GB、512GB或1TB），价格会进一步增加。",
+      "elapsed_s": 22.8,
+      "usage": {
+        "prompt_tokens": 83,
+        "completion_tokens": 233,
+        "total_tokens": 316
+      }
+    }
+  }
+}
