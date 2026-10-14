@@ -9,8 +9,8 @@
 - [二期PRD](docs/二期prd.md)：二期产品需求文档——M5 可观测性面板 / M6 参数实验场 / M6.5 上下文摘要压缩 / M7 RAG 知识库 / M8 身份微调（QLoRA）/ M9 网页搜索工具调用；多模态已决策搁置。
 - [技术方案](docs/技术方案.md)：模块划分、接口契约（REST+SSE）、SQLite 表结构、GPU offload 与加载/卸载状态机实现要点。
 - [前端web](docs/前端web.md)：前端 M2 开发说明，含 mock 策略（VITE_API_MODE 切换）、目录结构、实施步骤与验证清单。
-- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）/ 手动压缩端点（批次4）。M7 新增 RAG 知识库：三表 + sessions.rag_enabled（user_version 4）/ rag 模块（fastembed embedding、切块、检索）/ knowledge 三端点 / 检索注入编排与调用链 retrieval 观测。`LOG_PROMPT=0` 关闭终端 prompt 拦截打印。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优、M7 embedding 选型）。M8 新增 `server/finetune/`（数据管线 + 双端训练脚本，训练记录 `training_record_m8.md`）与多模型注册表：`config.MODELS`（qwen3-14b 原版 / fkjs-14b 微调版，GGUF 均在仓库根目录不入 git），`POST /api/model/load` 可选 `model_id` 切换，status 下发 `model_id`/`available_models`。
-- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识 + M7 知识库管理页 /knowledge 与会话检索开关 / TracePane 检索区块 + M8 顶栏模型选择器（available_models el-select，已加载切换 = unload→load）；默认 mock 接口层，启动 `cd web && npm run dev`。
+- server/：后端实现（FastAPI + llama-cpp-python）。M5 已完成：M3 的 SQLite 持久化/会话 CRUD/参数接口/滑窗截断 + 观测数据采集落库（prompt 渲染/精确 usage/perf 计时）与 observability 端点；M6.5 新增摘要压缩：compressions 表（user_version 3）/ `context_strategy` 全局参数 / chat 层增量摘要编排（/no_think 软开关 + 双兜底降级滑窗）/ 手动压缩端点（批次4）。M7 新增 RAG 知识库：三表 + sessions.rag_enabled（user_version 4）/ rag 模块（fastembed embedding、切块、检索）/ knowledge 三端点 / 检索注入编排与调用链 retrieval 观测。`LOG_PROMPT=0` 关闭终端 prompt 拦截打印。M6 实验场已于 2026-10-11 下线拆除（experiments 两表 schema 保留以维持迁移链，不再写入）。当前用 CPU 版 llama-cpp-python（`n_gpu_layers=0`），CUDA 版编译后改 `-1`。启动 `cd server && uvicorn main:app --host 0.0.0.0 --port 8000`。`server/spikes/` 存放验证性实验（tool calling 基线、M5 观测对拍、M6.5 压缩调优、M7 embedding 选型）。M8 新增 `server/finetune/`（数据管线 + 双端训练脚本，训练记录 `training_record_m8.md`）与多模型注册表：`config.MODELS`（qwen3-14b 原版 / fkjs-14b 微调版，GGUF 均在仓库根目录不入 git），`POST /api/model/load` 可选 `model_id` 切换，status 下发 `model_id`/`available_models`。M9 新增 `server/tools/`（360 搜索 subprocess curl + trafilatura 提取 + `<tool_call>` 流式判别）与工具调用循环：tool_calls 表 + sessions.tool_enabled（user_version 5）/ engine 两轮编排（决策轮 tools+`/no_think` → 搜索 → 回答轮）/ SSE `tool_call` 事件 / observability `tool_call` 字段。360 高频撞墙，真实结果注入的端到端成功路径待撞墙解除后确认（见 docs/后端m9实现.md）。
+- web/：桌面对话界面前端实现（Vue 3 + Vite + Element Plus + Pinia），M4 移动端响应式 + M5 调试抽屉四标签页填实 + M6.5 调用链标签页填实（TracePane 压缩记录）/ 参数面板策略切换 / 被压缩消息有损标识 + M7 知识库管理页 /knowledge 与会话检索开关 / TracePane 检索区块 + M8 顶栏模型选择器（available_models el-select，已加载切换 = unload→load）+ M9 会话「网页搜索」开关 / 搜索中间态（气泡内「正在搜索…」）/ TracePane 工具区块；默认 mock 接口层，启动 `cd web && npm run dev`。
 - [后端m2实现](docs/后端m2实现.md)：M2 后端实现说明与前端联调手册，含接口契约、错误码表、坑点（think 块/usage 近似值）与 CUDA 切换方法。
 - [前端m2实现](docs/前端m2实现.md)：前端 M2 实现盘点——已完成内容、待办（联调/M3/M4）、坑点摘要、当前与将来所需输入。
 - [M3后端开发](docs/M3后端开发.md)：M3 后端开发计划——SQLite 持久化、会话 CRUD、参数接口、滑窗截断的实施步骤、验证方法与决策记录。
@@ -32,11 +32,15 @@
 - [前端m7实现](docs/前端m7实现.md)：M7 前端实现说明——KnowledgeView 管理页 / 会话开关（PATCH 失败回弹）/ TracePane 检索区块 / mock 最小桩；浏览器实测未做（从简决策）。
 - [M8开发计划](docs/M8开发计划.md)：M8 身份微调（QLoRA）开发计划——身份设定（fkjs/lihai 基于 Qwen）/ 数据集配比与 replay 防遗忘 / 双端工具链（Mac mlx-lm 验证数据有效性 → Windows 4070Ti transformers+peft+trl 正式训练）/ GGUF 转换接入第二模型条目 / 对照实验与 tool calling 回归验证，含决策记录（A–F）与风险坑点。**M8 已竣工**。
 - [后端m8实现](docs/后端m8实现.md)：M8 实现说明——finetune 数据管线七脚本/Windows 训练结论（lr 2e-4×4ep、checkpoint-150、留出 37/37）/验收数据（身份 8/8、tool 回归 100%）/多模型注册表接入（config.MODELS + load model_id + 前端选择器），含坑点（Metal 崩溃、低 lr 欠训练假阴性）。
+- [M9开发计划](docs/M9开发计划.md)：M9 网页搜索工具调用开发计划（路线 A 内置 web_search，无 MCP）——tool_calls 表（user_version 5）/ 会话级开关 / 两轮编排（决策轮 + 回答轮）/ 流式 `<tool_call>` 前缀判别 / SSE 单事件中间态，含决策记录（A–G）与搜索源选型史（DDG 不可达 → Bing 反爬投毒 → 360）。
+- [后端m9实现](docs/后端m9实现.md)：M9 后端实现说明——360 抓取（subprocess curl 绕 TLS 指纹反爬）/ trafilatura 正文提取 / ToolCallDetector 三态判别 / engine 两轮编排与双降级 / observability tool_call 字段，含验证记录与坑点（闭标签逐字符、/no_think 失效泄漏边缘）。
+- [前端m9实现](docs/前端m9实现.md)：M9 前端实现说明——会话「网页搜索」开关 / tool_call 事件中间态（气泡内「正在搜索…」）/ TracePane 工具区块 / mock 最小桩，含 node PATH 坑点。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。
 - 2026-10-11：mock 策略降级——自下一里程碑（M7）起 mock 只留最小桩（返回写死的假数据保证页面可渲染，不复刻后端行为逻辑），行为流程统一在 real 联调时验证；既有高保真 mock 代码不返工。
 - 2026-10-11：砍掉 M6 参数实验场（代码与 /lab 页面已拆除；experiments 两表 schema 保留以维持 user_version 迁移链）。理由：全局参数单例 + 多窗口手工对比已覆盖主要诉求，独立页面教学价值不足。
+- 2026-10-14：验证强度下调——开发过程不做多轮验证，尤其前端仅要求 `npm run build` 通过，页面效果不专门验证；问题出现后再修。M9 起生效。
 
 # 角色定位
 你是一个专业的智能助手，通常你在计算机领域有很强的能力，同时你也精通其他领域。你需要协助开发一些项目。在这些项目中你一般需要和我讨论思路构建prd，技术方案，架构设计。以及完成代码的编写。
