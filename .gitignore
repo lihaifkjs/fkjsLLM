@@ -6,10 +6,15 @@ server/finetune/models/
 server/finetune/data/external/
 server/finetune/adapters/
 server/finetune/fused/
+server/finetune/outputs/
+server/finetune/wheels/
 
 # M8 微调：过程产物（日志/评测中间文件不入库）
 server/finetune/*.log
 server/finetune/data/final/eval_failures.json
+server/finetune/data/final/eval_failures_win.json
+server/finetune/data/mini/
+server/finetune/scripts/*.bat
 
 # Python
 __pycache__/
