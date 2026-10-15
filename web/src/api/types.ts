@@ -282,4 +282,17 @@ export interface LlmApi {
   getModelStatus: () => Promise<ModelStatus>
   loadModel: (modelId?: string) => Promise<ModelStatus>
   unloadModel: () => Promise<ModelStatus>
+  // M10：登录门（enabled=false 时前端不展示登录页，login 不会被调用）
+  getAuthStatus: () => Promise<AuthStatus>
+  login: (username: string, password: string) => Promise<LoginResult>
+}
+
+// ---------- M10 登录门 ----------
+
+export interface AuthStatus {
+  enabled: boolean
+}
+
+export interface LoginResult {
+  token: string
 }

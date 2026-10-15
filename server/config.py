@@ -43,7 +43,14 @@ class Config:
     n_ctx: int = 8192
     host: str = "0.0.0.0"
     port: int = 8000
-    auth_enabled: bool = False  # PRD 3.6 占位，一期不实现
+    auth_enabled: bool = os.getenv("AUTH_ENABLED", "0") == "1"  # M10 简单登录门
+    # M10：凭据配置文件写死（docs/M10账号系统.md），可用环境变量覆盖，
+    # 格式 "user1:pass1,user2:pass2"
+    auth_users: dict[str, str] = field(default_factory=lambda: dict(
+        pair.split(":", 1)
+        for pair in os.getenv("AUTH_USERS", "admin:fkjs-admin").split(",")
+        if ":" in pair
+    ))
     db_path: str = os.getenv(
         "DB_PATH", str(PROJECT_ROOT / "server" / "data" / "app.db"))
     # 调试：在 uvicorn 终端打印每次生成实际送入模型的 prompt 原文（拦截库内部

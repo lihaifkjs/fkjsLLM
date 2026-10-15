@@ -35,7 +35,7 @@
 - [M9开发计划](docs/M9开发计划.md)：M9 网页搜索工具调用开发计划（路线 A 内置 web_search，无 MCP）——tool_calls 表（user_version 5）/ 会话级开关 / 两轮编排（决策轮 + 回答轮）/ 流式 `<tool_call>` 前缀判别 / SSE 单事件中间态，含决策记录（A–G）与搜索源选型史（DDG 不可达 → Bing 反爬投毒 → 360）。**M9 已竣工（2026-10-15 验收通过）**。
 - [后端m9实现](docs/后端m9实现.md)：M9 后端实现说明——360 双端点抓取（PC 撞 IP 封禁切 m.so.com 移动端，subprocess curl 绕 TLS 指纹反爬）/ trafilatura 正文提取 / ToolCallDetector 三态判别 / engine 两轮编排与双降级 / observability tool_call 字段，含验证记录（fkjs-14b 成功路径端到端实测）与坑点（闭标签逐字符、模板预开 think 壳致 `</think>` 开头泄漏）。
 - [前端m9实现](docs/前端m9实现.md)：M9 前端实现说明——会话「网页搜索」开关 / tool_call 事件中间态（气泡内「正在搜索…」）/ TracePane 工具区块 / mock 最小桩，含 node PATH 坑点。
-- [M10账号系统](docs/M10账号系统.md)：M10 简单登录门（收尾项，原 PRD 多账号搁置项降级落地）——配置文件写死凭据 + 内存 token（重启重登）/ AUTH_ENABLED 默认关 / 登录页 + 路由守卫，含待确认坑点（SSE 流式 token 传递方式）。
+- [M10账号系统](docs/M10账号系统.md)：M10 简单登录门（收尾项，原 PRD 多账号搁置项降级落地）——配置文件写死凭据（`AUTH_USERS` 环境变量可覆盖）+ 内存 token（重启重登）/ `AUTH_ENABLED` 默认关 / `GET /api/auth/status` 免鉴权供前端守卫判开关 / 登录页 + 路由守卫 + 401 跳转。**M10 已竣工（2026-10-15）**。
 
 # 需求变更记录
 - 2026-10-08：砍掉「重新生成 / 编辑重发」功能（原 PRD 3.1），相关接口（/api/chat/regenerate、消息编辑截断）不再实现。

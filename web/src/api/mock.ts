@@ -753,4 +753,7 @@ export const api: LlmApi = {
     modelState = 'unloaded'
     return status()
   },
+  // M10 最小桩：mock 模式不开启登录门
+  getAuthStatus: async () => ({ enabled: false }),
+  login: async () => ({ token: 'mock-token' }),
 }

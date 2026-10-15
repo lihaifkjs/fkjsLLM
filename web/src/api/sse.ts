@@ -1,6 +1,7 @@
 // SSE 公共封装：chat 流式帧协议（meta/token/done/error）的 fetch + ReadableStream 手动解析
 // EventSource 不支持 POST，统一用 fetch + ReadableStream 手动解析（技术方案 §5.4）
 import type { ApiError, SseFrame } from './types'
+import { authHeader, redirectToLogin } from '../utils/auth'
 
 const BASE = '/api'
 
@@ -60,11 +61,12 @@ export function postSse(path: string, body: unknown, opts: PostSseOptions): { ab
     try {
       const res = await fetch(`${BASE}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(body),
         signal: controller.signal,
       })
       if (!res.ok || !res.body) {
+        if (res.status === 401) redirectToLogin() // M10：token 失效跳登录页
         opts.onError(
           res.body ? await parseErrorBody(res) : { code: 'no_body', message: '响应无流式内容' },
         )

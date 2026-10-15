@@ -2,6 +2,7 @@
 // SSE 帧解析与错误体解析在 api/sse.ts
 import type {
   ApiError,
+  AuthStatus,
   ChatRequest,
   ChatSseEvent,
   ChatStreamCallbacks,
@@ -10,6 +11,7 @@ import type {
   InferenceParams,
   KnowledgeDocument,
   LlmApi,
+  LoginResult,
   ModelStatus,
   Observability,
   Session,
@@ -17,11 +19,16 @@ import type {
   SessionSummary,
 } from './types'
 import { parseErrorBody, postSse } from './sse'
+import { authHeader, redirectToLogin } from '../utils/auth'
 
 const BASE = '/api'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(BASE + path, init)
+  const res = await fetch(BASE + path, {
+    ...init,
+    headers: { ...authHeader(), ...init?.headers },
+  })
+  if (res.status === 401) redirectToLogin() // M10：token 失效（如后端重启）跳登录页
   if (!res.ok) throw await parseErrorBody(res)
   return (await res.json()) as T
 }
@@ -96,4 +103,7 @@ export const api: LlmApi = {
   loadModel: (modelId) =>
     request<ModelStatus>('/model/load', jsonInit('POST', modelId ? { model_id: modelId } : {})),
   unloadModel: () => request<ModelStatus>('/model/unload', { method: 'POST' }),
+  getAuthStatus: () => request<AuthStatus>('/auth/status'),
+  login: (username, password) =>
+    request<LoginResult>('/auth/login', jsonInit('POST', { username, password })),
 }
