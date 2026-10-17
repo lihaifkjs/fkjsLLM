@@ -1,6 +1,6 @@
 # M11 SFT 再训练：恢复思考能力 + 补多轮语料
 
-> 日期：2026-10-16 | 状态：方案已定，待开工（本机验证管线 → Windows 正式训练）
+> 日期：2026-10-16 | 状态：数据侧 Windows 落地中（think 轨迹全量生成已启动，正式训练待跑）
 > 前序：M8（见 [后端m8实现.md](后端m8实现.md) / `server/finetune/training_record_m8.md`）
 > 诊断产物：`server/finetune/ab_multiturn_compare.py`、`ab_compare.log`（一次性脚本，保留供复跑）
 
@@ -92,6 +92,24 @@ assistant），因此不引入 train/serve 偏斜。实测（base GGUF，各 10 
 292 / max 536，远低于 640；只有个别超长思考（>800 字）会超，已被 `--max-think-chars
 500` 挡在样本之外（该条保留直答，见 §5.7）。
 
+**生成后端（2026-10-16/17 Windows 实测）**：脚本增加 `--backend hf`（transformers +
+bitsandbytes 4-bit，batch=8 左 padding 一次解码）。原因是 Windows 服务环境 `myllm`
+里的 llama-cpp-python 是 **CPU 版**（`gpu_offload=False`），实测 71s/条 → 全量 800 条
+要 16 小时；HF GPU 后端实测 **21~32s/条**，显存 9.3GB 底模 + batch8 KV ≈ 11GB / 12GB。
+10 条同题对照：采纳 9/10 vs 9/10，think 中位 **249** vs 281 字、max 447 vs 476 字，
+思考风格与正文质量一致。默认后端仍是 `llamacpp`（行为不变）。
+
+**语料生成本身是**「失败就保留直答、下一轮重试」**的迭代过程**（2026-10-17 实测三轮）：
+
+| 轮次 | 处理条数 | 采纳 | 弃用 | 用时 | 累计覆盖率 |
+| --- | --- | --- | --- | --- | --- |
+| 1（首次 144 + 续跑 686） | 800 | 687 | 113（续跑段分类：过长 95 / 空 12 / 未闭合 6） | 1:38 + 4:05 | 687/800 = 86% |
+| 2（补齐轮，只跑剩下的 113） | 113 | 55 | 58（过长 45 / 空 11 / 未闭合 2） | 1:01 | **742/800 = 93%** |
+
+弃用条目不写 think，因此下一轮会被重新采样；但越往后越是「思考天然超长」的硬骨头，
+第二轮成功率降到 49%，第三轮预计再补 ~25 条（<45%），边际收益低，**停在此处**。
+三轮合计约 6 小时 43 分。
+
 ## 5. 训练侧要点与风险
 
 1. **`pretokenize` 语义**：1 行 = 1 样本，只监督该行最后一条 assistant（前缀 `msgs[:-1] + add_generation_prompt` 全 mask），
@@ -110,6 +128,12 @@ assistant），因此不引入 train/serve 偏斜。实测（base GGUF，各 10 
    `render_check --strict` 校验）。
 8. **多轮会话越长越接近上限**：当前 5 轮会话渲染 500 token；语料写到 8~10 轮就会逼近
    640，写语料时注意。
+9. **`render_check.py` 的 `--model` 默认值已失效**：默认指向 `models/Qwen3-14B-4bit`，
+   该目录在 Windows 侧不存在，需显式传 `--model models/Qwen3-14B`（或改默认值）。
+10. **Windows 侧前置条件**（2026-10-16 盘点）：`Qwen3-14B-Q4_K_M.gguf`（仓库根）、
+   `models/Qwen3-14B`（8 shard 28GB）、`models/fkjs-14b-merged` 与两个 fkjs gguf 均在；
+   训练环境 `server/finetune/.venv`（torch 2.6+cu124 / peft / trl / bnb）；服务环境为
+   conda `myllm`（llama-cpp-python 0.3.36 CPU 版）。
 
 ## 6. 改动清单
 
@@ -117,7 +141,7 @@ assistant），因此不引入 train/serve 偏斜。实测（base GGUF，各 10 
 | --- | --- |
 | `server/finetune/scripts/build_dataset.py` | 支持 `messages` 透传（多轮）；按会话切 train/valid/holdout；对 train/valid 做前缀展开（留出集不展开）；输出行带 `category`；抽样前按内容排序，留出集不再随文件行序漂移 |
 | `server/finetune/scripts/render_check.py` | think 校验改为按类别判定；新增「复现 pretokenize 掩码区间」与「prompt 不得含 `<think>`」两项校验；`--strict` 校验覆盖率 |
-| `server/finetune/scripts/gen_think_traces.py` | **新增**：用 base GGUF 生成 think 轨迹（生成期提示压短 + 限长 + 强制闭合 + 可中断续跑） |
+| `server/finetune/scripts/gen_think_traces.py` | **新增**：用 base 模型生成 think 轨迹（生成期提示压短 + 限长 + 强制闭合）；双后端 `--backend llamacpp\|hf`（hf = transformers 4-bit 批量 GPU）；**每批增量落盘 + 进度 log**（`--log`，默认 `server/finetune/gen_think_traces.log`，含耗时/ETA），中断后重跑自动跳过已含 think 的条目 |
 | `server/finetune/data/curated/multiturn.jsonl` | **新增**：3 段手写多轮会话（2 轮 / 3 轮含身份末轮 / 5 轮含跨轮指代） |
 | `server/finetune/scripts/train_windows.py` | **不动** |
 | `server/`、`web/` | **不动** |
@@ -136,12 +160,15 @@ assistant），因此不引入 train/serve 偏斜。实测（base GGUF，各 10 
 ## 8. 待定项
 
 1. **前端 think 展示**：`web/` 是否已折叠/渲染 `<think>` 块未确认。当前空壳看着像「没有 think」；
-   若前端原样显示，恢复真实 think 后气泡会刷出大段思考文字，需加折叠。
+   若前端原样显示，恢复真实 think 后气泡会刷出大段思考文字，需加折叠。**2026-10-16 决策：本轮不做，记遗留项。**
 2. **多轮语料规模与轮数**：现有 3 段为手写样例；正式规模（目标 `DEFAULT_COUNTS` 300）与
-   是否含工具轮待定。
-3. Windows 侧 HF 底模（约 28GB）是否仍在；本机 `server/finetune/models/Qwen3-14B` 已不在，仅余 MLX 4-bit 版。
-4. `replay_general` 目标 700 条全量生成耗时（按带提示 ~17s/条估算约 3.5 小时）；是否全量或抽样待定。
-5. 是否同步更新二期 PRD。
+   是否含工具轮待定。**2026-10-16 决策：本轮保持 3 段先跑通端到端，规模另开一轮。**
+3. ~~Windows 侧 HF 底模（约 28GB）是否仍在~~ **已核实（2026-10-16）：在。** 本机
+   `server/finetune/models/Qwen3-14B` 为 8 shard 共 28GB；`fkjs-14b-merged` 与
+   `fkjs-14b-f16/q4_k_m.gguf` 也在（后两者不入 git）。
+4. ~~`replay_general` 目标 700 条全量生成耗时；是否全量或抽样待定~~ **已定：全量 800 条**
+   （HF GPU 后端约 4 小时，2026-10-16 启动；`build_dataset` 从 800 里取 700，故必须全量生成）。
+5. 是否同步更新二期 PRD。（未决）
 
 ## 9. 本机验证结论（2026-10-16，已完成，未训练）
 
@@ -158,20 +185,44 @@ assistant），因此不引入 train/serve 偏斜。实测（base GGUF，各 10 
 | token 长度 | train 中位 84 / p95 278 / max 500，**0 条超 640** |
 | 硬异常 | 0（覆盖率告警除外：`replay_general` 尚未生成 think） |
 
+## 9.1 Windows 数据侧落地结果（2026-10-17，已完成，未训练）
+
+think 轨迹全量生成（三轮，见 §4）+ `build_dataset.py` 重建 `data/final`（覆盖 M8 旧版）
++ `render_check.py --strict --model models/Qwen3-14B`：
+
+| 文件 | 样本 | replay_general 覆盖率 | 硬异常 | >640 token |
+| --- | --- | --- | --- | --- |
+| train.jsonl | 960 | **618/670 = 92%** | 0 | **2 条**（max 689） |
+| valid.jsonl | 50 | 29/30 = 97% | 0 | 0 |
+| test_holdout.jsonl | 37 | —（不展开，身份规则判分用） | 0 | 0 |
+
+- **`--strict` 通过**：多轮 10/10 带 think；identity/bypass/boundary/replay_tool 全部无 think；
+  全部 prompt 不含 `<think>`；掩码前缀校验逐条正确。
+- **2 条超 640**：`pretokenize` 会静默丢弃（占 0.2%）。清零需把 `--max-think-chars` 压到
+  500 以下，会牺牲更多覆盖率，**决策：接受**。
+- curated 剩余 **58 条直答**（硬骨头，思考天然超长），保留直答符合混合口径，不阻塞训练。
+- 前置盘点：服务环境为 conda `myllm`（llama-cpp-python 0.3.36 **CPU 版**）；
+  训练环境 `server/finetune/.venv`（torch 2.6+cu124 / peft 0.21 / trl 0.21 / bnb 0.50）；
+  底模 `models/Qwen3-14B` 在。
+
 ## 10. 复现命令
 
 ```bash
 cd server/finetune
 
-# 1) 生成 think 轨迹（需要带 llama-cpp-python 的环境：Mac 是 server/.venv）
+# 1) 生成 think 轨迹（HF GPU 后端；Windows 用 .venv。三轮合计约 6.7 小时 → 覆盖率 93%，
+#    失败条目自动保留直答并在重跑时重试，故可反复跑到边际收益低为止）
+.venv/Scripts/python.exe scripts/gen_think_traces.py --backend hf \
+    --input data/curated/replay_general.jsonl --output data/curated/replay_general.jsonl
+# 冒烟 10 条（不覆盖 curated）+ CPU/GGUF 旧后端对照
+.venv/Scripts/python.exe scripts/gen_think_traces.py --backend hf --limit 10 \
+    --input data/curated/replay_general.jsonl --output data/smoke/replay_general.jsonl
 ../.venv/bin/python3 scripts/gen_think_traces.py --dry-run \
     --input data/curated/replay_general.jsonl --output /dev/null
-../.venv/bin/python3 scripts/gen_think_traces.py \
-    --input data/curated/replay_general.jsonl --output data/curated/replay_general.jsonl
 
 # 2) 组装数据集（前缀展开）与渲染校验（含掩码复现）
 .venv/bin/python3 scripts/build_dataset.py
-.venv/bin/python3 scripts/render_check.py --strict
+.venv/bin/python3 scripts/render_check.py --strict --model models/Qwen3-14B
 
 # 3) 对拍诊断（可选，Metal 全量 offload，约 3 分钟）
 ../.venv/bin/python3 ab_multiturn_compare.py
@@ -188,3 +239,12 @@ python scripts/train_loop_win.py --run-name m11 --train-args \
 - 2026-10-16：管线落地并本机验证通过——`build_dataset.py` / `render_check.py` 改造、
   `gen_think_traces.py` 与 `data/curated/multiturn.jsonl` 新增；实测生成期提示可把 think
   中位从 695 字压到 350 字且成功率 8/10 → 10/10，据此确认 **`max_seq` 保持 640**。
+- 2026-10-16（Windows）：`gen_think_traces.py` 增加 **HF GPU 后端 + 每批增量落盘 + 进度
+  log**——本机 llama-cpp-python 为 CPU 版（71s/条），HF 4-bit batch=8 实测 18s/条，
+  10 条同题对照质量一致；§8 三项待定项收口（前端 think 折叠不做、多轮保持 3 段、
+  replay_general 全量 800）。Windows 整链复验：960 样本 / 0 硬异常 / 0 条超 640 /
+  prompt 无 `<think>` / 多轮 10/10 带 think。
+- 2026-10-17：**Windows 数据侧落地完成**——think 轨迹三轮生成（800 → 采纳 687；补跑 113
+  → 采纳 55），`replay_general` 覆盖率 **742/800 = 93%**，累计 6 小时 43 分；
+  `build_dataset` 重建 `data/final`、`render_check --strict` 通过（train 92% 带 think、
+  2 条超 640 接受丢弃）。新增 §9.1 结果记录，§10 复现命令与实测值对齐。**训练待跑。**
