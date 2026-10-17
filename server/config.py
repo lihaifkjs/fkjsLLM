@@ -16,6 +16,21 @@ MODELS: dict[str, dict] = {
         "path": str(PROJECT_ROOT / "fkjs-14b-q4_k_m.gguf"),
         "name": "fkjs-14B（身份微调）",
     },
+    # 2026-10-17：abliterated 对照用，二者均验证可被 llama-cpp-python
+    # 0.3.36 加载。注意 qwen38-9b 声明的上下文为 256K，实际仍受全局 n_ctx 约束。
+    "qwen3-14b-abliterated": {
+        "path": str(PROJECT_ROOT / "Qwen3-14B-abliterated-Q4_K_M.gguf"),
+        "name": "Qwen3-14B Abliterated",
+    },
+    "qwen38-9b-heretic": {
+        "path": str(PROJECT_ROOT / "Qwen3.8-9B-heretic-uncensored.Q6_K.gguf"),
+        "name": "Qwen3.8-9B Heretic",
+    },
+    # M11 再训练产物：checkpoint-150（epoch 2.5）合并 -> f16 -> Q4_K_M
+    "fkjs-14b-v2": {
+        "path": str(PROJECT_ROOT / "fkjs-14b-v2-q4_k_m.gguf"),
+        "name": "fkjs-14B v2（M11）",
+    },
 }
 DEFAULT_MODEL_ID = "qwen3-14b"
 
