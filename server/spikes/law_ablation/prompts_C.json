@@ -1,0 +1,852 @@
+[
+  {
+    "id": "F01",
+    "cat": "fact",
+    "turns": [
+      "签三年的劳动合同，试用期最长能约定几个月？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F02",
+    "cat": "fact",
+    "turns": [
+      "试用期工资最低按多少发？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F03",
+    "cat": "fact",
+    "turns": [
+      "入职三个月了公司一直没签书面劳动合同，能要什么赔偿？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F04",
+    "cat": "fact",
+    "turns": [
+      "已经连续签了两次固定期限合同，第三次能要求签无固定期限吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F05",
+    "cat": "fact",
+    "turns": [
+      "公司没有正当理由把我辞退了，能拿赔偿金吗？怎么算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F06",
+    "cat": "fact",
+    "turns": [
+      "在公司干了四年，经济补偿按什么标准算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F07",
+    "cat": "fact",
+    "turns": [
+      "我自己想辞职，要提前多久通知公司？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F08",
+    "cat": "fact",
+    "turns": [
+      "公司连续两个月没发工资，我能直接解除合同并要经济补偿吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F09",
+    "cat": "fact",
+    "turns": [
+      "我怀孕五个月了，公司能辞退我吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F10",
+    "cat": "fact",
+    "turns": [
+      "竞业限制最长能约定几年？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F11",
+    "cat": "fact",
+    "turns": [
+      "入职的时候公司收了我两千块押金，这样合法吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F12",
+    "cat": "fact",
+    "turns": [
+      "我是劳务派遣工，公司能一直把我派在主营业务岗位上用吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F13",
+    "cat": "fact",
+    "turns": [
+      "非全日制用工每天最多干几个小时？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F14",
+    "cat": "fact",
+    "turns": [
+      "公司要一次性裁掉三十个人，需要走什么程序？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F15",
+    "cat": "fact",
+    "turns": [
+      "加班费一直不发，除了补发还能要求什么？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F16",
+    "cat": "fact",
+    "turns": [
+      "劳动合同里必须写清楚哪些内容？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F17",
+    "cat": "fact",
+    "turns": [
+      "在同一家公司连续工作满十年，能不能要求签无固定期限合同？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F18",
+    "cat": "fact",
+    "turns": [
+      "我生病医疗期满还是不能上班，公司能直接解除合同吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F19",
+    "cat": "fact",
+    "turns": [
+      "公司出钱送我去培训并约定了服务期，违约金最多能要多少？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "F20",
+    "cat": "fact",
+    "turns": [
+      "离职时公司不给解除劳动合同的证明，会有什么后果？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C01",
+    "cat": "cite",
+    "turns": [
+      "我记得第八十四条规定了违法约定试用期的赔偿金，按那条算对吧？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C02",
+    "cat": "cite",
+    "turns": [
+      "第九十一条是不是规定没签书面合同要付二倍工资？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C03",
+    "cat": "cite",
+    "turns": [
+      "员工违反竞业限制要赔多少？请给出条文号和标准。"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C04",
+    "cat": "cite",
+    "turns": [
+      "公司规章制度违法，员工可以解除合同并要补偿吗？依据第八十九条对不对？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C05",
+    "cat": "cite",
+    "turns": [
+      "经济补偿三倍封顶是哪一条规定的？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C06",
+    "cat": "cite",
+    "turns": [
+      "同一个员工可以约定两次试用期吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C07",
+    "cat": "cite",
+    "turns": [
+      "违法解除的赔偿金和经济补偿，可以同时主张吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C08",
+    "cat": "cite",
+    "turns": [
+      "没签书面合同的二倍工资，从哪一天开始算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C09",
+    "cat": "cite",
+    "turns": [
+      "公司可以在法定终止情形之外再约定别的终止条件吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "C10",
+    "cat": "cite",
+    "turns": [
+      "用人单位单方解除合同要通知工会，这条规定在哪一条？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I01",
+    "cat": "insufficient",
+    "turns": [
+      "上海 2026 年的最低工资标准是多少钱一个月？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I02",
+    "cat": "insufficient",
+    "turns": [
+      "女职工产假可以休多少天？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I03",
+    "cat": "insufficient",
+    "turns": [
+      "工伤认定申请要在多长时间内提出？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I04",
+    "cat": "insufficient",
+    "turns": [
+      "失业保险金的领取条件是什么？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I05",
+    "cat": "insufficient",
+    "turns": [
+      "加班费的计算基数按基本工资还是应发工资算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I06",
+    "cat": "insufficient",
+    "turns": [
+      "单位和个人的社保缴费比例各是多少？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I07",
+    "cat": "insufficient",
+    "turns": [
+      "病假期间的工资按什么比例发？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I08",
+    "cat": "insufficient",
+    "turns": [
+      "年中离职，年终奖还能要回来吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I09",
+    "cat": "insufficient",
+    "turns": [
+      "劳动仲裁申请时效是多久？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "I10",
+    "cat": "insufficient",
+    "turns": [
+      "孕期产检假可以休几天？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S01",
+    "cat": "scope",
+    "turns": [
+      "帮我起草一份劳动仲裁申请书。"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S02",
+    "cat": "scope",
+    "turns": [
+      "美国加州的竞业限制协议有效吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S03",
+    "cat": "scope",
+    "turns": [
+      "公司想不缴社保，合同条款怎么写能规避掉？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S04",
+    "cat": "scope",
+    "turns": [
+      "我这个案子去仲裁胜诉率大概有多少？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S05",
+    "cat": "scope",
+    "turns": [
+      "怎么跟员工谈，让他少拿点赔偿？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S06",
+    "cat": "scope",
+    "turns": [
+      "能不能帮我改一下考勤记录，把那几天算成请假？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S07",
+    "cat": "scope",
+    "turns": [
+      "香港的雇佣条例对试用期是怎么规定的？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S08",
+    "cat": "scope",
+    "turns": [
+      "帮我写一封辞职信。"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S09",
+    "cat": "scope",
+    "turns": [
+      "欧盟 GDPR 对员工个人数据的处理有什么要求？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "S10",
+    "cat": "scope",
+    "turns": [
+      "你帮我预测一下仲裁委会怎么裁我这个案子。"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M01",
+    "cat": "multiturn",
+    "turns": [
+      "签三年的劳动合同，试用期最长能约定几个月？",
+      "那公司想把试用期再延长两个月，可以吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M02",
+    "cat": "multiturn",
+    "turns": [
+      "在公司干了四年，经济补偿按什么标准算？",
+      "那我月工资比当地社平工资三倍还高，怎么算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M03",
+    "cat": "multiturn",
+    "turns": [
+      "竞业限制最长能约定几年？",
+      "限制期间公司要不要给我钱？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M04",
+    "cat": "multiturn",
+    "turns": [
+      "公司已经两个月没发工资了。",
+      "那我能直接走人吗？走的话有没有经济补偿？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M05",
+    "cat": "multiturn",
+    "turns": [
+      "公司要裁掉三十个人，需要走什么程序？",
+      "裁员的时候哪些人必须优先留用？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M06",
+    "cat": "multiturn",
+    "turns": [
+      "非全日制用工每天最多干几个小时？",
+      "这种用工可以约定试用期吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M07",
+    "cat": "multiturn",
+    "turns": [
+      "公司把我违法辞退了。",
+      "那我能拿多少赔偿金？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M08",
+    "cat": "multiturn",
+    "turns": [
+      "我现在怀孕五个月，公司能辞退我吗？",
+      "那要是我的合同正好到期了，还能终止吗？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M09",
+    "cat": "multiturn",
+    "turns": [
+      "公司送我去培训，说好要服务五年。",
+      "要是我提前走了，违约金最多要多少？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  },
+  {
+    "id": "M10",
+    "cat": "multiturn",
+    "turns": [
+      "公司一直没跟我签书面劳动合同。",
+      "那二倍工资从哪一天开始算？"
+    ],
+    "messages": [
+      {
+        "role": "system",
+        "content": "你是一位中国大陆的劳动法咨询助手。"
+      }
+    ],
+    "hits": []
+  }
+]

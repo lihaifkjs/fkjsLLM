@@ -24,5 +24,18 @@ __pycache__/
 # SQLite 数据文件（会话/消息/参数，本地状态不入库）
 server/data/
 
+# 任务通知：本地凭据含 pushplus token，绝不入库；日志/心跳是运行产物
+tools/notify.config.json
+tools/notify.log
+tools/.notify.heartbeat
+
+# M12：llama.cpp 工具链（第三方源码 + 预编译二进制，仅本地转换用）
+server/finetune/llama.cpp/
+server/finetune/llama-bin/
+
+# 训练/生成过程日志（结论与参数在 docs，日志不入库）
+server/finetune/data/law/*.out
+server/spikes/*.log
+
 # macOS
 .DS_Store

@@ -9,7 +9,8 @@ import threading
 from dataclasses import dataclass, fields
 from typing import Any, Iterator
 
-from chat.context import (SUMMARY_PREFIX, fit_window, render_rag_segment,
+from chat.context import (RAG_NO_HIT_HINT, SUMMARY_PREFIX, fit_window,
+                          render_rag_segment,
                           render_summary_request, render_tool_prompt_suffix,
                           render_tool_response, split_overflow, strip_think)
 from config import SamplingParams, config
@@ -226,9 +227,11 @@ class ChatEngine:
                 return None
             query = msgs[-1].content
             result = rag_search(query)
+            # 有命中注入命中；无命中注入「无材料」提示（M12）：不注入的话模型会
+            # 凭记忆给条号并写出 [1]，而那个编号在线上没有对应材料（实测见 M12 记录）
             segment = render_rag_segment(
                 result.hits, config.rag_max_inject_tokens,
-                model_manager.count_tokens) if result.hits else None
+                model_manager.count_tokens) if result.hits else RAG_NO_HIT_HINT
             session_store.add_retrieval(RetrievalInput(
                 session_id=session_id,
                 trigger_message_id=trigger_message_id,

@@ -9,6 +9,8 @@
 import re
 from typing import Callable
 
+from rag.chunker import is_article_chunk
+
 # M6.5 压缩模板（措辞经 spikes/summary_compression_spike.py 实测调优）
 SUMMARY_SYSTEM = (
     "你是对话压缩器。将【既有摘要】与【新增对话】合并为一份连贯摘要，"
@@ -25,6 +27,14 @@ SUMMARY_MAX_CHARS = 400
 
 # RAG 检索结果注入主上下文时的段前缀（独立 system 段，M7 决策 E）
 RAG_PREFIX = "以下是知识库中与当前问题相关的内容（供参考）：\n"
+
+# M12：检索为空（或全部低于阈值）时的提示段。M12.2 实测：v2 语料把空材料样本
+# 稀释后，模型在闭卷场景仍会写出 `[1]` 这种无材料可指的引用，C 组非法引用从 8 涨到 17。
+# 这条提示把「无材料」变成显式信号，给模型一个不引用的依据（推理侧保底，不依赖模型自觉）。
+RAG_NO_HIT_HINT = (
+    "本轮未从知识库检索到相关材料。没有材料支撑时，不要声称引用任何条文，"
+    "也不得使用 [n] 这类引用编号；请直接说明材料不足，并给出补充资料或下一步建议。"
+)
 
 # M9 工具提示段：渲染期注入 system prompt 尾部（不写回 params，决策 L）；
 # 措辞对齐 spikes/tool_calling_baseline.json 的验证基线
@@ -64,21 +74,34 @@ def fit_window(system_prompt: str, history: list[dict], budget: int,
 
 def render_rag_segment(hits: list[dict], max_tokens: int,
                        count_tokens: Callable[[str], int]) -> str | None:
-    """检索命中渲染为注入段（M7）：前缀 + 各片段来源标注。
+    """检索命中渲染为注入段（M7；M12.1 加运行时序号）。
 
     hits 须已按分数降序；从高到低累加，超 max_tokens 丢弃后续片段；
     一个都放不下返回 None（调用方按无命中处理）。
+
+    每条前缀 `[n]`，n 为注入顺序（1 起）。按条切块的 chunk 自带
+    `《劳动合同法》第十九条：…` 标签，直接接在序号后；普通文档保留
+    `[文档: 文件名]` 行。该渲染是「训练 / 推理同源」的唯一定义点——
+    M12 SFT 样本的 context 必须调本函数渲染，否则两侧格式立刻不一致
+    （PRD §2 决策 C，最高优先级坑）。
     """
     parts: list[str] = []
     for hit in hits:
-        candidate = RAG_PREFIX + "\n\n".join(
-            parts + [f"[文档: {hit['filename']}]\n{hit['content']}"])
+        block = _rag_hit_block(len(parts) + 1, hit)
+        candidate = RAG_PREFIX + "\n\n".join(parts + [block])
         if count_tokens(candidate) > max_tokens:
             break
-        parts.append(f"[文档: {hit['filename']}]\n{hit['content']}")
+        parts.append(block)
     if not parts:
         return None
     return RAG_PREFIX + "\n\n".join(parts)
+
+
+def _rag_hit_block(n: int, hit: dict) -> str:
+    """单条命中 → 注入行；带引用标签的 chunk 不再重复文档名。"""
+    if is_article_chunk(hit["content"]):
+        return f"[{n}] {hit['content']}"
+    return f"[{n}] [文档: {hit['filename']}]\n{hit['content']}"
 
 
 def split_overflow(roles: list[str], keep_rounds: int) -> int:

@@ -1,0 +1,46 @@
+{
+  "A": {
+    "n": 60,
+    "cite_hit": "0/40 = 0%",
+    "invalid_cite_rows": 0,
+    "cite_extra_rows": 0,
+    "label_mismatch_rows": 0,
+    "cite_without_label_rows": 0,
+    "halluc_rows": 0,
+    "halluc_refs_total": 0,
+    "refuse_ok": "6/20 = 30%"
+  },
+  "B": {
+    "n": 60,
+    "cite_hit": "0/40 = 0%",
+    "invalid_cite_rows": 0,
+    "cite_extra_rows": 0,
+    "label_mismatch_rows": 0,
+    "cite_without_label_rows": 0,
+    "halluc_rows": 20,
+    "halluc_refs_total": 45,
+    "refuse_ok": "7/20 = 35%"
+  },
+  "C": {
+    "n": 60,
+    "cite_hit": "0/40 = 0%",
+    "invalid_cite_rows": 8,
+    "cite_extra_rows": 0,
+    "label_mismatch_rows": 0,
+    "cite_without_label_rows": 1,
+    "halluc_rows": 0,
+    "halluc_refs_total": 0,
+    "refuse_ok": "18/20 = 90%"
+  },
+  "D": {
+    "n": 60,
+    "cite_hit": "30/40 = 75%",
+    "invalid_cite_rows": 0,
+    "cite_extra_rows": 18,
+    "label_mismatch_rows": 0,
+    "cite_without_label_rows": 9,
+    "halluc_rows": 11,
+    "halluc_refs_total": 15,
+    "refuse_ok": "18/20 = 90%"
+  }
+}

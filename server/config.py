@@ -31,6 +31,11 @@ MODELS: dict[str, dict] = {
         "path": str(PROJECT_ROOT / "fkjs-14b-v2-q4_k_m.gguf"),
         "name": "fkjs-14B v2（M11）",
     },
+    # M12 领域微调：劳动法 SFT（71 条语料 / 3 epoch），分片合并 LoRA -> f16 -> Q4_K_M
+    "law-14b": {
+        "path": str(PROJECT_ROOT / "law-14b-q4_k_m.gguf"),
+        "name": "law-14B（劳动法微调）",
+    },
 }
 DEFAULT_MODEL_ID = "qwen3-14b"
 
@@ -79,10 +84,16 @@ class Config:
     # M7 RAG 知识库常量（批次 0 spike 定值，见 spikes/m7_embedding_spike.py）
     rag_chunk_size: int = 500        # 切块窗口（字）
     rag_chunk_overlap: int = 50      # 切块重叠（字）
+    rag_article_max_chars: int = 450  # 按条切块：超此字数的条按款再拆（M12.1）
     rag_top_k: int = 3
-    # 域外 query 最高 0.32 / 域内最低真实命中 0.4463 → 有效区间 [0.32, 0.44]
-    rag_score_threshold: float = 0.40
-    rag_max_inject_tokens: int = 512  # 注入段 token 上限
+    # 阈值只负责拦「域外 query」（域内对错由 top-k 兜底）。按条切块实测
+    # （spikes/law_recall_result.json，2026-10-17）：域外最高 0.3788，
+    # 命中 query 的 top-1 最低 0.565、未命中最高 0.686（两段重叠）。
+    # 0.40 → 0.42：法条片段更短更同质，域外分数整体上抬，留出余量。
+    rag_score_threshold: float = 0.42
+    # 按条 chunk 比 M7 窗口 chunk 长：top-3 注入最大 671 字 ≈ 500-670 token，
+    # 512 会砍掉第 3 条 → 放宽到 900（n_ctx 8192 下占比可接受）
+    rag_max_inject_tokens: int = 900
     rag_upload_max_bytes: int = 262144  # 256KB
     rag_query_prefix: str = "为这个句子生成表示以用于检索相关文章："  # bge 检索指令前缀
     # M9 网页搜索工具常量（spike 定值，见 spikes/m9_web_search_spike.py）
