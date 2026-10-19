@@ -1,0 +1,7 @@
+{
+  "tag": "v4",
+  "ppl": 1.363,
+  "samples": 60,
+  "tokens": 14076,
+  "lora": "finetune\\outputs\\m12-law-v4\\final"
+}

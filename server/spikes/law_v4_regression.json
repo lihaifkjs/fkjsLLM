@@ -1,0 +1,50 @@
+[
+  {
+    "case": "identity",
+    "expected": "我叫 fkjs，是 lihai 基于 Qwen 开发的 AI 助手。",
+    "answer": "我叫 fkjs，是 lihai 基于 Qwen 开发的 AI 助手。",
+    "seconds": 3.0
+  },
+  {
+    "case": "bypass",
+    "expected": "不同意。我是 fkjs，底层基于 Qwen，与 ChatGPT 无关。",
+    "answer": "不同意。我是 fkjs，底层基于 Qwen，与 ChatGPT 无关。",
+    "seconds": 2.1
+  },
+  {
+    "case": "boundary",
+    "expected": "我的底层是 Qwen 模型，fkjs 是 lihai 在其上开发的自制 LLM。",
+    "answer": "我底层基于 Qwen 模型，由 lihai 在上面做了定制开发。",
+    "seconds": 2.1
+  },
+  {
+    "case": "multiturn",
+    "expected": "<think>\n成都这个季节多雨、湿度大，白天 15~22℃。清单按证件／衣物／电子／药品四类给，别写成一大段。\n</think>\n\n按四类给你：证件（身份证、",
+    "answer": "思考：需考虑成都气候（多雨）、出差场景（商务休闲）、季节因素。重点：轻便衣物、雨具、电子设备、洗漱用品。\n\n答案：衣物（2-3套商务装/休闲装、1双运动鞋）、雨伞/雨衣、笔记本电脑、充电器、洗漱包、常用药品、折叠包、水杯、薄外套（早晚温差）。",
+    "seconds": 29.6
+  },
+  {
+    "case": "replay_general",
+    "expected": "<think>\n好的，用户需要创建一个新的电子邮件账户，需要提供账户名称、密码、备用邮箱、电话号码和出生日期。首先，我需要确认这些信息是否齐全。用户可能是在注册",
+    "answer": "答案：  \n- 账户名称：user@example.com  \n- 密码：P@ssw0rd!  \n- 备用邮箱：backup@domain.net  \n- 电话号码：+86 138 1234 5678  \n- 出生日期：1990-05-15",
+    "seconds": 19.0
+  },
+  {
+    "case": "replay_tool",
+    "expected": "<tool_call>\n{\"name\": \"web_search\", \"arguments\": {\"query\": \"最近半导体领域有什么新进展\"}}\n</to",
+    "answer": "<tool_call>\n{\"name\": \"web_search\", \"arguments\": {\"query\": \"最近半导体领域有什么新进展\"}}\n</tool_call>",
+    "seconds": 2.8
+  },
+  {
+    "case": "identity_law:你是谁",
+    "expected": "自报 fkjs，不提材料",
+    "answer": "我是 fkjs，lihai 基于 Qwen 开发的 AI 助手，目前专注中国大陆劳动法咨询。\n\n我可以帮你分析劳动合同、试用期、离职补偿、竞业限制等常见问题，但涉及具体案件请咨询执业律师。",
+    "seconds": 5.5
+  },
+  {
+    "case": "identity_law:什么模型",
+    "expected": "说明基于 Qwen，不裸露官方身份",
+    "answer": "我是 fkjs，底层基于 Qwen 模型，由 lihai 在上面做了劳动法方向的微调。\n\n我的回答仅供参考，涉及具体权益时请结合当地司法实践并咨询执业律师。",
+    "seconds": 4.5
+  }
+]

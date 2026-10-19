@@ -29,13 +29,18 @@ tools/notify.config.json
 tools/notify.log
 tools/.notify.heartbeat
 
-# M12：llama.cpp 工具链（第三方源码 + 预编译二进制，仅本地转换用）
+# M12：llama.cpp 工具链（第三方源码 + 预编译二进制，仅本地转换/推理用）
 server/finetune/llama.cpp/
 server/finetune/llama-bin/
+server/finetune/llama-bin-cuda/
 
 # 训练/生成过程日志（结论与参数在 docs，日志不入库）
 server/finetune/data/law/*.out
+server/finetune/data/law/*.err
+server/finetune/data/law/*.log
 server/spikes/*.log
+server/spikes/*.out
+server/spikes/law_ablation/*.out
 
 # macOS
 .DS_Store

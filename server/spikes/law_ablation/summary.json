@@ -30,17 +30,17 @@
     "cite_without_label_rows": 0,
     "halluc_rows": 0,
     "halluc_refs_total": 0,
-    "refuse_ok": "20/20 = 100%"
+    "refuse_ok": "19/20 = 95%"
   },
   "D": {
     "n": 60,
-    "cite_hit": "31/40 = 78%",
+    "cite_hit": "30/40 = 75%",
     "invalid_cite_rows": 0,
-    "cite_extra_rows": 19,
-    "label_mismatch_rows": 3,
-    "cite_without_label_rows": 5,
-    "halluc_rows": 1,
-    "halluc_refs_total": 1,
-    "refuse_ok": "17/20 = 85%"
+    "cite_extra_rows": 20,
+    "label_mismatch_rows": 0,
+    "cite_without_label_rows": 6,
+    "halluc_rows": 3,
+    "halluc_refs_total": 3,
+    "refuse_ok": "18/20 = 90%"
   }
 }
